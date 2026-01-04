@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 interface ReportData {
   vehicleUsage: any
@@ -15,6 +16,22 @@ export default function DashboardClient({ data }: { data: ReportData }) {
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <nav className="flex space-x-4">
+          <Link 
+            href="/admin/dashboard" 
+            className="px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700"
+          >
+            Dashboard
+          </Link>
+          <Link 
+            href="/admin/audit" 
+            className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          >
+            Audit Log
+          </Link>
+        </nav>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-sm font-medium text-gray-500">Today's Revenue</h3>

@@ -91,15 +91,29 @@ keyman-hotel/
 - **MANAGER**: Full operational access
 - **ADMIN**: System administration
 
-## 📊 **Reports API**
+## 📊 **API Routes**
 
-All reports are available via API endpoints:
+### **Authentication**
+- `POST /api/auth/login` - User authentication
 
-- `/api/reports/vehicle-usage`
-- `/api/reports/daily`
-- `/api/reports/room-performance`
-- `/api/reports/staff-performance`
-- `/api/reports/repeat-customers`
+### **Bookings**
+- `GET /api/bookings` - List bookings (with optional filters)
+- `POST /api/bookings` - Create new booking
+
+### **Payments**
+- `GET /api/payments` - List payments (with optional filters)
+- `POST /api/payments` - Record new payment
+
+### **Reports**
+- `GET /api/reports/daily` - Daily revenue summary
+- `GET /api/reports/vehicle-usage` - Vehicle usage statistics
+- `GET /api/reports/room-performance` - Room performance metrics
+- `GET /api/reports/staff-performance` - Staff performance metrics
+- `GET /api/reports/repeat-customers` - Repeat customers analysis
+
+### **Audit Log**
+- `GET /api/audit` - Retrieve audit trail (Admin only)
+- `POST /api/audit` - Create audit entry (System use)
 
 ## 🚀 **Deployment**
 
