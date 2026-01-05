@@ -1,7 +1,11 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { debugEnvironment } from '@/lib/debug'
 import Link from 'next/link'
 
 async function getDashboardData() {
+  // Debug environment variables
+  debugEnvironment()
+  
   const supabase = createSupabaseServer()
   
   const today = new Date().toISOString().split('T')[0]
