@@ -107,24 +107,43 @@ export async function POST(request: Request) {
     // Create customer if not exists
     let customerId = customer_id
     if (!customerId) {
-      const { data: newCustomer, error: customerError } = await supabase
+      // Check if customer already exists
+      const { data: existingCustomer, error: findError } = await supabase
         .from('customers')
-        .insert([{
-          full_name: customer_name,
-          email: customer_email,
-          phone: customer_phone || null
-        }])
-        .select()
+        .select('id')
+        .eq('email', customer_email)
         .single()
 
-      if (customerError) {
-        console.error('Customer creation error:', customerError)
+      if (findError && findError.code !== 'PGRST116') {
+        console.error('Customer lookup error:', findError)
         return NextResponse.json(
-          { error: 'Failed to create customer', details: customerError.message },
+          { error: 'Failed to lookup customer', details: findError.message },
           { status: 500 }
         )
       }
-      customerId = newCustomer.id
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id
+      } else {
+        // Create new customer
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert([{
+            full_name: customer_name,
+            email: customer_email
+          }])
+          .select()
+          .single()
+
+        if (customerError) {
+          console.error('Customer creation error:', customerError)
+          return NextResponse.json(
+            { error: 'Failed to create customer', details: customerError.message },
+            { status: 500 }
+          )
+        }
+        customerId = newCustomer.id
+      }
     }
 
     // Create booking
@@ -145,7 +164,7 @@ export async function POST(request: Request) {
       }])
       .select(`
         *,
-        rooms(room_type, room_number),
+        rooms(room_type),
         customers(full_name, email)
       `)
       .single()
