@@ -18,6 +18,9 @@ export async function GET(request: Request) {
       .limit(100)
 
     if (error) {
+      if (error.code === 'PGRST200') {
+        throw new Error('Invalid Supabase relationship used in query')
+      }
       console.error('Audit log fetch error:', error)
       return NextResponse.json(
         { error: 'Failed to fetch audit logs' },

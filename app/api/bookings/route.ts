@@ -14,7 +14,8 @@ export async function GET(request: Request) {
       .select(`
         *,
         rooms(room_type, room_number),
-        profiles(full_name, email, phone)
+        customers(full_name, email),
+        staff(full_name, role)
       `)
       .neq('status', 'Cancelled')
 

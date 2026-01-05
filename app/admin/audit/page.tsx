@@ -17,6 +17,9 @@ async function getAuditLogs(): Promise<AuditLog[]> {
     .limit(100)
 
   if (error) {
+    if (error.code === 'PGRST200') {
+      throw new Error('Invalid Supabase relationship used in query')
+    }
     console.error('Audit logs fetch error:', error)
     return []
   }
