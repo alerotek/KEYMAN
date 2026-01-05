@@ -7,14 +7,14 @@ import { useRouter, usePathname } from 'next/navigation'
 export default function Navigation() {
   const router = useRouter()
   const pathname = usePathname()
-  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string>('guest')
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check user role (simplified for demo)
+    // Check user role (simplified for demo - in production, check auth state)
     const checkUserRole = async () => {
       try {
-        // In a real app, this would check auth state
+        // In a real app, this would check auth state from Supabase
         const role = localStorage.getItem('userRole') || 'guest'
         setUserRole(role)
       } catch (error) {
@@ -29,11 +29,11 @@ export default function Navigation() {
 
   if (isLoading) {
     return (
-      <nav className="bg-gray-800 text-white">
+      <nav className="bg-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="text-xl font-bold">Keyman Hotel</div>
-            <div className="animate-pulse">Loading...</div>
+            <div className="text-2xl font-bold text-amber-600">Keyman Hotel</div>
+            <div className="animate-pulse text-gray-500">Loading...</div>
           </div>
         </div>
       </nav>
@@ -41,29 +41,30 @@ export default function Navigation() {
   }
 
   const publicLinks = [
-    { href: '/', label: 'Home' },
+    { href: '/home', label: 'Home' },
     { href: '/book', label: 'Book Now' },
-    { href: '/contact', label: 'Contact' },
   ]
 
-  const guestLinks = [
-    { href: '/my-bookings', label: 'My Bookings' },
+  const customerLinks = [
+    { href: '/customer/dashboard', label: 'My Bookings' },
     { href: '/book', label: 'Book New Stay' },
-    { href: '/payments', label: 'Payments' },
-    { href: '/profile', label: 'Profile' },
   ]
 
   const staffLinks = [
     { href: '/staff/dashboard', label: 'Dashboard' },
     { href: '/staff/bookings', label: 'Bookings' },
-    { href: '/staff/payments', label: 'Payments' },
-    { href: '/staff/guests', label: 'Guests' },
+  ]
+
+  const managerLinks = [
+    { href: '/manager/dashboard', label: 'Dashboard' },
+    { href: '/admin/bookings', label: 'Bookings' },
+    { href: '/admin/rooms', label: 'Rooms' },
   ]
 
   const adminLinks = [
     { href: '/admin/dashboard', label: 'Dashboard' },
-    { href: '/admin/rooms', label: 'Rooms' },
     { href: '/admin/bookings', label: 'Bookings' },
+    { href: '/admin/rooms', label: 'Rooms' },
     { href: '/admin/payments', label: 'Payments' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/staff', label: 'Staff' },
@@ -73,13 +74,14 @@ export default function Navigation() {
   const getNavigationLinks = () => {
     switch (userRole) {
       case 'admin':
-      case 'manager':
         return adminLinks
+      case 'manager':
+        return managerLinks
       case 'staff':
       case 'receptionist':
         return staffLinks
       case 'customer':
-        return guestLinks
+        return customerLinks
       default:
         return publicLinks
     }
@@ -88,24 +90,24 @@ export default function Navigation() {
   const links = getNavigationLinks()
 
   return (
-    <nav className="bg-gray-800 text-white">
+    <nav className="bg-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="text-xl font-bold">
+            <Link href="/home" className="text-2xl font-bold text-amber-600">
               Keyman Hotel
             </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-8">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                className={`text-gray-700 hover:text-amber-600 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   pathname === link.href
-                    ? 'bg-gray-900 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? 'text-amber-600 border-b-2 border-amber-600'
+                    : ''
                 }`}
               >
                 {link.label}
@@ -113,23 +115,65 @@ export default function Navigation() {
             ))}
 
             {/* Role Switcher for Demo */}
-            <div className="ml-4 pl-4 border-l border-gray-600">
+            <div className="ml-4 pl-4 border-l border-gray-200">
               <select
-                value={userRole || 'guest'}
+                value={userRole}
                 onChange={(e) => {
                   const newRole = e.target.value
                   localStorage.setItem('userRole', newRole)
                   setUserRole(newRole)
-                  router.push('/')
+                  router.push('/home')
                 }}
-                className="bg-gray-700 text-white px-2 py-1 rounded text-sm"
+                className="bg-gray-100 text-gray-700 px-3 py-1 rounded text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
                 <option value="guest">Guest</option>
                 <option value="customer">Customer</option>
                 <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <div className="ml-2">
+              <select
+                value={userRole}
+                onChange={(e) => {
+                  const newRole = e.target.value
+                  localStorage.setItem('userRole', newRole)
+                  setUserRole(newRole)
+                  router.push('/home')
+                }}
+                className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs border border-gray-300"
+              >
+                <option value="guest">Guest</option>
+                <option value="customer">Customer</option>
+                <option value="staff">Staff</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        <div className="md:hidden border-t border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-gray-700 hover:text-amber-600 block px-3 py-2 rounded-md text-base font-medium ${
+                  pathname === link.href
+                    ? 'text-amber-600 bg-amber-50'
+                    : ''
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
