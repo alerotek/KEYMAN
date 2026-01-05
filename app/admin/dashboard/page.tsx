@@ -1,6 +1,6 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import DashboardClient from './client'
-import { getRoomPerformanceReport, getStaffPerformanceReport, getRepeatCustomersReport } from '@/lib/api-client'
+import { getVehicleUsageReport, getDailyRevenue, getRoomPerformanceReport, getStaffPerformanceReport, getRepeatCustomersReport } from '@/lib/api-client'
 
 async function getReportData() {
   const today = new Date().toISOString().split('T')[0]
@@ -8,15 +8,15 @@ async function getReportData() {
 
   // Direct database calls instead of HTTP self-calls
   const [vehicleUsage, daily, roomPerformance, staffPerformance, repeatCustomers] = await Promise.all([
-    fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/reports/vehicle-usage?start_date=${thirtyDaysAgo}&end_date=${today}`),
-    fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/reports/daily?date=${today}`),
+    getVehicleUsageReport(thirtyDaysAgo, today),
+    getDailyRevenue(today),
     getRoomPerformanceReport(thirtyDaysAgo, today),
     getStaffPerformanceReport(thirtyDaysAgo, today),
     getRepeatCustomersReport()
   ])
 
-  const vehicleData = await vehicleUsage.json()
-  const dailyData = await daily.json()
+  const vehicleData = vehicleUsage
+  const dailyData = daily
 
   return {
     vehicleUsage: vehicleData,
