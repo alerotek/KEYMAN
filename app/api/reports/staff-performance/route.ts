@@ -43,9 +43,9 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    // Fetch staff profiles separately
+    // Fetch staff separately (not profiles - actual table is staff)
     const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
+      .from('staff')
       .select('id, full_name, email, role')
       .in('id', staffIds)
 

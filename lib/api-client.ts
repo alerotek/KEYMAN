@@ -91,7 +91,10 @@ export async function getStaffPerformanceReport(startDate: string, endDate: stri
     .select(`
       total_amount,
       created_by,
-      profiles!inner(full_name)
+      staff!bookings_staff_id_fkey(
+        full_name,
+        role
+      )
     `)
     .gte('created_at', startDate)
     .lte('created_at', endDate)
@@ -102,7 +105,7 @@ export async function getStaffPerformanceReport(startDate: string, endDate: stri
   // Group by staff
   const staffStats = bookings?.reduce((acc, booking) => {
     const staffId = booking.created_by
-    const staffName = (booking.profiles as any)?.full_name || 'Unknown'
+    const staffName = (booking.staff as any)?.full_name || 'Unknown'
     if (!acc[staffId]) {
       acc[staffId] = {
         staff_id: staffId,
@@ -128,17 +131,20 @@ export async function getRepeatCustomersReport(): Promise<RepeatCustomersReport[
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select(`
-      guest_id,
-      profiles!inner(full_name)
+      customer_id,
+      customers!bookings_customer_id_fkey(
+        full_name,
+        email
+      )
     `)
-    .not('guest_id', 'is', null)
+    .not('customer_id', 'is', null)
 
   if (error) throw error
 
   // Group by customer and count bookings
   const customerStats = bookings?.reduce((acc, booking) => {
-    const customerId = booking.guest_id
-    const customerName = (booking.profiles as any)?.full_name || 'Unknown'
+    const customerId = booking.customer_id
+    const customerName = (booking.customers as any)?.full_name || 'Unknown'
     if (!acc[customerId]) {
       acc[customerId] = {
         customer_id: customerId,

@@ -25,10 +25,10 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
-    // Fetch profiles separately
+    // Fetch customers separately (not profiles - actual table is customers)
     const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, phone')
+      .from('customers')
+      .select('id, full_name, email')
       .in('id', customerIds)
 
     if (profilesError) throw profilesError
@@ -41,14 +41,14 @@ export async function GET(request: Request) {
 
     const customerBookings = bookings?.reduce((acc: any, booking: any) => {
       const customerId = booking.customer_id
-      const profile = profileMap[customerId]
+      const customer = profileMap[customerId]
       
       if (!acc[customerId]) {
         acc[customerId] = {
           customer_id: customerId,
-          full_name: profile?.full_name || 'Unknown',
-          email: profile?.email || 'Unknown',
-          phone: profile?.phone || 'Unknown',
+          full_name: customer?.full_name || 'Unknown',
+          email: customer?.email || 'Unknown',
+          phone: customer?.phone || 'Unknown',
           booking_count: 0
         }
       }
