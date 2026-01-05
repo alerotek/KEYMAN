@@ -9,16 +9,10 @@ export async function GET(request: Request) {
 
     const supabase = createSupabaseServer()
 
+    // Fix: Remove invalid relationship and use separate queries
     let bookingsQuery = supabase
       .from('bookings')
-      .select(`
-        *,
-        profiles!bookings_staff_id_fkey(
-          full_name,
-          email,
-          role
-        )
-      `)
+      .select('id, created_by, total_amount')
       .neq('status', 'Cancelled')
 
     if (start_date && end_date) {
@@ -29,7 +23,12 @@ export async function GET(request: Request) {
 
     const { data: bookings, error: bookingsError } = await bookingsQuery
 
-    if (bookingsError) throw bookingsError
+    if (bookingsError) {
+      if (bookingsError.code === 'PGRST200') {
+        throw new Error('Invalid Supabase relationship used in query')
+      }
+      throw bookingsError
+    }
 
     const bookingIds = bookings?.map(b => b.id) || []
     
@@ -37,16 +36,36 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
+    // Get unique staff IDs
+    const staffIds = Array.from(new Set(bookings?.map(b => b.created_by).filter(Boolean)))
+    
+    if (staffIds.length === 0) {
+      return NextResponse.json([])
+    }
+
+    // Fetch staff profiles separately
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role')
+      .in('id', staffIds)
+
+    if (profilesError) throw profilesError
+
+    // Create profile lookup map
+    const profileMap: Record<string, any> = (profiles || []).reduce((acc: Record<string, any>, profile: any) => {
+      acc[profile.id] = profile
+      return acc
+    }, {})
+
     const { data: payments, error: paymentsError } = await supabase
       .from('payments')
       .select('booking_id, amount')
       .in('booking_id', bookingIds)
-      .eq('status', 'Completed')
 
     if (paymentsError) throw paymentsError
 
     const staffPerformance = bookings?.reduce((acc: any, booking: any) => {
-      const staff = booking.profiles
+      const staff = profileMap[booking.created_by]
       if (!staff) return acc
       
       const staffKey = staff.id

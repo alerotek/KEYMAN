@@ -5,23 +5,43 @@ export async function GET(request: Request) {
   try {
     const supabase = createSupabaseServer()
 
+    // Fix: Remove invalid relationship and use separate queries
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select(`
-        customer_id,
-        profiles!bookings_customer_id_fkey(
-          full_name,
-          email,
-          phone
-        )
-      `)
+      .select('customer_id')
       .neq('status', 'Cancelled')
 
-    if (bookingsError) throw bookingsError
+    if (bookingsError) {
+      if (bookingsError.code === 'PGRST200') {
+        throw new Error('Invalid Supabase relationship used in query')
+      }
+      throw bookingsError
+    }
+
+    // Get unique customer IDs
+    const customerIds = Array.from(new Set(bookings?.map(b => b.customer_id).filter(Boolean)))
+    
+    if (customerIds.length === 0) {
+      return NextResponse.json([])
+    }
+
+    // Fetch profiles separately
+    const { data: profiles, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone')
+      .in('id', customerIds)
+
+    if (profilesError) throw profilesError
+
+    // Create profile lookup map
+    const profileMap: Record<string, any> = (profiles || []).reduce((acc: Record<string, any>, profile: any) => {
+      acc[profile.id] = profile
+      return acc
+    }, {})
 
     const customerBookings = bookings?.reduce((acc: any, booking: any) => {
       const customerId = booking.customer_id
-      const profile = booking.profiles
+      const profile = profileMap[customerId]
       
       if (!acc[customerId]) {
         acc[customerId] = {
