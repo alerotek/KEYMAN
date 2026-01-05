@@ -137,8 +137,8 @@ export default function AdminBookingsPage() {
                             {booking.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          ${booking.total_amount}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          KES {booking.total_amount}
                         </td>
                       </tr>
                     ))}

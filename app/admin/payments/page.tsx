@@ -118,7 +118,7 @@ export default function AdminPaymentsPage() {
                           {payment.booking_id ? payment.booking_id.substring(0, 8) + '...' : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          ${payment.amount_paid}
+                          KES {payment.amount_paid}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {payment.method || 'Cash'}

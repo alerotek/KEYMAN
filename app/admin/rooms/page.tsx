@@ -114,11 +114,11 @@ export default function AdminRoomsPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-500">Base Price:</span>
-                        <span className="text-sm font-medium text-gray-900">${room.base_price}</span>
+                        <span className="text-sm font-medium text-gray-900">KES {room.base_price}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-500">Breakfast:</span>
-                        <span className="text-sm font-medium text-gray-900">${room.breakfast_price}</span>
+                        <span className="text-sm font-medium text-gray-900">KES {room.breakfast_price}</span>
                       </div>
                     </div>
                     

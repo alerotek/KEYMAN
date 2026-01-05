@@ -35,7 +35,7 @@ export default function DashboardClient({ data }: { data: ReportData }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-sm font-medium text-gray-500">Today's Revenue</h3>
-          <p className="mt-2 text-3xl font-bold text-green-600">${data.daily.total_revenue || 0}</p>
+          <p className="mt-2 text-3xl font-bold text-green-600">KES {data.daily.total_revenue || 0}</p>
         </div>
         
         <div className="bg-white rounded-lg shadow p-6">
@@ -50,7 +50,7 @@ export default function DashboardClient({ data }: { data: ReportData }) {
         
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-sm font-medium text-gray-500">Outstanding Balance</h3>
-          <p className="mt-2 text-3xl font-bold text-orange-600">${data.daily.outstanding_balance || 0}</p>
+          <p className="mt-2 text-3xl font-bold text-orange-600">KES {data.daily.outstanding_balance || 0}</p>
         </div>
       </div>
 
@@ -60,12 +60,12 @@ export default function DashboardClient({ data }: { data: ReportData }) {
           <div>
             <h4 className="font-medium text-gray-700">Vehicle Bookings</h4>
             <p className="text-2xl font-bold text-blue-600">{data.vehicleUsage.vehicle_count}</p>
-            <p className="text-sm text-gray-500">Revenue: ${data.vehicleUsage.vehicle_revenue}</p>
+            <p className="text-sm text-gray-500">Revenue: KES {data.vehicleUsage.vehicle_revenue}</p>
           </div>
           <div>
             <h4 className="font-medium text-gray-700">Non-Vehicle Bookings</h4>
             <p className="text-2xl font-bold text-gray-600">{data.vehicleUsage.non_vehicle_count}</p>
-            <p className="text-sm text-gray-500">Revenue: ${data.vehicleUsage.non_vehicle_revenue}</p>
+            <p className="text-sm text-gray-500">Revenue: KES {data.vehicleUsage.non_vehicle_revenue}</p>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function DashboardClient({ data }: { data: ReportData }) {
                 <tr key={index}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{room.room_type}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{room.booking_count}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${room.total_revenue}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">KES {room.total_revenue}</td>
                 </tr>
               ))}
             </tbody>
@@ -112,7 +112,7 @@ export default function DashboardClient({ data }: { data: ReportData }) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{staff.staff_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staff.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staff.booking_count}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${staff.total_revenue}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">KES {staff.total_revenue}</td>
                 </tr>
               ))}
             </tbody>

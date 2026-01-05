@@ -1,5 +1,6 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { sendBookingConfirmationEmail } from '@/lib/email/service'
 
 export const dynamic = 'force-dynamic'
 
@@ -175,6 +176,14 @@ export async function POST(request: Request) {
         { error: 'Failed to create booking', details: bookingError.message },
         { status: 500 }
       )
+    }
+
+    // Send booking confirmation email
+    try {
+      await sendBookingConfirmationEmail(booking)
+    } catch (emailError) {
+      console.error('Failed to send booking confirmation email:', emailError)
+      // Don't fail the booking if email fails
     }
 
     return NextResponse.json({ 

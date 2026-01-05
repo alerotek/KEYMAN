@@ -11,8 +11,8 @@ export async function GET() {
       .from('bookings')
       .select(`
         *,
-        rooms(room_type, room_number),
-        customers(full_name, email, phone),
+        rooms(room_type),
+        customers(full_name, email),
         staff(full_name, role)
       `)
       .order('created_at', { ascending: false })

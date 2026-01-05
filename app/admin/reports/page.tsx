@@ -69,7 +69,7 @@ export default function AdminReportsPage() {
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-sm font-medium text-gray-500">Today's Revenue</h3>
             <p className="mt-2 text-3xl font-bold text-green-600">
-              ${reports?.daily?.revenue || 0}
+              KES {reports?.daily?.revenue || 0}
             </p>
             <p className="mt-1 text-sm text-gray-600">
               {reports?.daily?.bookings_count || 0} bookings today
@@ -129,7 +129,7 @@ export default function AdminReportsPage() {
                           {room.booking_count}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          ${room.total_revenue}
+                          KES {room.total_revenue}
                         </td>
                       </tr>
                     ))}
@@ -185,7 +185,7 @@ export default function AdminReportsPage() {
                           {staff.booking_count}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          ${staff.total_revenue}
+                          KES {staff.total_revenue}
                         </td>
                       </tr>
                     ))}
