@@ -1,5 +1,6 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { debugEnvironment } from '@/lib/debug'
+import { getVehicleUsageReport, getDailyRevenue } from '@/lib/api-client'
 import Link from 'next/link'
 
 async function getDashboardData() {
@@ -11,15 +12,14 @@ async function getDashboardData() {
   const today = new Date().toISOString().split('T')[0]
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const [bookingsResponse, vehicleUsageResponse, dailyResponse] = await Promise.all([
+  // Direct database calls instead of HTTP self-calls
+  const [bookingsResponse, vehicleUsage, daily] = await Promise.all([
     supabase.from('bookings').select('count').neq('status', 'Cancelled'),
-    fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/reports/vehicle-usage?start_date=${thirtyDaysAgo}&end_date=${today}`),
-    fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/reports/daily?date=${today}`)
+    getVehicleUsageReport(thirtyDaysAgo, today),
+    getDailyRevenue(today)
   ])
 
   const bookings = await bookingsResponse
-  const vehicleUsage = await vehicleUsageResponse.json()
-  const daily = await dailyResponse.json()
 
   return {
     totalBookings: bookings.count || 0,
@@ -47,17 +47,17 @@ export default async function HomePage() {
           
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm font-medium text-gray-500">Today's Revenue</h3>
-            <p className="mt-2 text-3xl font-bold text-green-600">${dashboardData.daily.total_revenue || 0}</p>
+            <p className="mt-2 text-3xl font-bold text-green-600">${dashboardData.daily.revenue || 0}</p>
           </div>
           
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm font-medium text-gray-500">Vehicle Usage</h3>
-            <p className="mt-2 text-3xl font-bold text-purple-600">{dashboardData.vehicleUsage.vehicle_percentage || 0}%</p>
+            <p className="mt-2 text-3xl font-bold text-purple-600">{dashboardData.vehicleUsage.vehicle_booking_percentage || 0}%</p>
           </div>
           
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-sm font-medium text-gray-500">Today's Check-ins</h3>
-            <p className="mt-2 text-3xl font-bold text-orange-600">{dashboardData.daily.checkins_today || 0}</p>
+            <p className="mt-2 text-3xl font-bold text-orange-600">{dashboardData.daily.bookings_count || 0}</p>
           </div>
         </div>
 

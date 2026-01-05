@@ -123,3 +123,12 @@ export interface RepeatCustomersReport {
   booking_count: number;
   is_repeat_customer: boolean;
 }
+
+export interface DailyRevenue {
+  date: string;
+  revenue: number;
+  bookings_count: number;
+  total_revenue?: number;
+  vehicle_percentage?: number;
+  checkins_today?: number;
+}
