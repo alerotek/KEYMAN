@@ -27,12 +27,6 @@ interface DashboardData {
     total_revenue: number
     total_guests: number
   }>
-  staffPerformance: Array<{
-    staff_name: string
-    role: string
-    booking_count: number
-    total_revenue: number
-  }>
   recentBookings: Array<any>
   dateRange: {
     start: string
@@ -41,7 +35,7 @@ interface DashboardData {
   }
 }
 
-export default function AdminDashboard() {
+export default function ManagerDashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -53,7 +47,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch(`/api/dashboard/admin?dateRange=${dateRange}`)
+      const response = await fetch(`/api/dashboard/manager?dateRange=${dateRange}`)
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data')
       }
@@ -63,22 +57,6 @@ export default function AdminDashboard() {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const downloadPDFReport = async () => {
-    try {
-      const response = await fetch(`/api/dashboard/admin?dateRange=${dateRange}&reportType=pdf`)
-      if (!response.ok) {
-        throw new Error('Failed to generate report')
-      }
-      const reportData = await response.json()
-      
-      // For now, log the report data. In production, this would generate a PDF
-      console.log('PDF Report Data:', reportData.exportData)
-      alert('PDF report generation would be implemented here with a PDF library')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate report')
     }
   }
 
@@ -120,7 +98,7 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Manager Dashboard</h1>
               <p className="mt-1 text-sm text-gray-500">
                 Keyman Hotel Management System
               </p>
@@ -136,12 +114,6 @@ export default function AdminDashboard() {
                 <option value="90">Last 90 days</option>
                 <option value="365">Last year</option>
               </select>
-              <button
-                onClick={downloadPDFReport}
-                className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-sm font-medium"
-              >
-                Download PDF Report
-              </button>
             </div>
           </div>
         </div>
@@ -288,37 +260,6 @@ export default function AdminDashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{room.booking_count}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">KES {room.total_revenue.toLocaleString()}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{room.total_guests}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Staff Performance */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Staff Performance</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staff Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bookings</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {data.staffPerformance.map((staff, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{staff.staff_name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        {staff.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{staff.booking_count}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">KES {staff.total_revenue.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>

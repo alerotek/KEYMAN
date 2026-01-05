@@ -1,8 +1,28 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+// Role hierarchy for production-grade RBAC
+export const ROLE_HIERARCHY = {
+  'guest': 0,
+  'customer': 1,
+  'staff': 2,
+  'manager': 3,
+  'admin': 4
+}
+
+// Valid roles for validation
+export const VALID_ROLES = ['guest', 'customer', 'staff', 'manager', 'admin']
+
 export async function requireRole(requiredRole: string) {
   const supabase = createSupabaseServer()
+  
+  // Validate required role
+  if (!VALID_ROLES.includes(requiredRole)) {
+    return NextResponse.json(
+      { error: 'Invalid role specification' },
+      { status: 500 }
+    )
+  }
   
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -17,7 +37,7 @@ export async function requireRole(requiredRole: string) {
   // Get user profile with role
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, full_name, email')
     .eq('id', user.id)
     .single()
 
@@ -28,7 +48,15 @@ export async function requireRole(requiredRole: string) {
     )
   }
 
-  // Check role
+  // Validate role exists in profile
+  if (!profile.role || !VALID_ROLES.includes(profile.role)) {
+    return NextResponse.json(
+      { error: 'Invalid user role' },
+      { status: 401 }
+    )
+  }
+
+  // Check exact role match
   if (profile.role !== requiredRole) {
     return NextResponse.json(
       { error: 'Insufficient permissions' },
@@ -43,6 +71,14 @@ export async function requireRole(requiredRole: string) {
 export async function requireMinimumRole(minimumRole: string) {
   const supabase = createSupabaseServer()
   
+  // Validate minimum role
+  if (!VALID_ROLES.includes(minimumRole)) {
+    return NextResponse.json(
+      { error: 'Invalid role specification' },
+      { status: 500 }
+    )
+  }
+  
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
@@ -56,7 +92,7 @@ export async function requireMinimumRole(minimumRole: string) {
   // Get user profile with role
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, full_name, email')
     .eq('id', user.id)
     .single()
 
@@ -67,17 +103,16 @@ export async function requireMinimumRole(minimumRole: string) {
     )
   }
 
-  // Role hierarchy
-  const roleHierarchy = {
-    'guest': 0,
-    'customer': 1,
-    'staff': 2,
-    'manager': 3,
-    'admin': 4
+  // Validate role exists in profile
+  if (!profile.role || !VALID_ROLES.includes(profile.role)) {
+    return NextResponse.json(
+      { error: 'Invalid user role' },
+      { status: 401 }
+    )
   }
 
-  const userLevel = roleHierarchy[profile.role as keyof typeof roleHierarchy] || 0
-  const requiredLevel = roleHierarchy[minimumRole as keyof typeof roleHierarchy] || 0
+  const userLevel = ROLE_HIERARCHY[profile.role as keyof typeof ROLE_HIERARCHY] || 0
+  const requiredLevel = ROLE_HIERARCHY[minimumRole as keyof typeof ROLE_HIERARCHY] || 0
 
   if (userLevel < requiredLevel) {
     return NextResponse.json(
@@ -88,4 +123,11 @@ export async function requireMinimumRole(minimumRole: string) {
 
   // Return user info for use in API routes
   return { user, profile }
+}
+
+// Helper function to check if user has specific permission
+export function hasPermission(userRole: string, requiredRole: string): boolean {
+  const userLevel = ROLE_HIERARCHY[userRole as keyof typeof ROLE_HIERARCHY] || 0
+  const requiredLevel = ROLE_HIERARCHY[requiredRole as keyof typeof ROLE_HIERARCHY] || 0
+  return userLevel >= requiredLevel
 }
