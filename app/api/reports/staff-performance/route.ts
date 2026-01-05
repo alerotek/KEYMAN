@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     // Fix: Remove invalid relationship and use separate queries
     let bookingsQuery = supabase
       .from('bookings')
-      .select('id, created_by, total_amount')
+      .select('id, staff_id, total_amount')
       .neq('status', 'Cancelled')
 
     if (start_date && end_date) {
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     }
 
     // Get unique staff IDs
-    const staffIds = Array.from(new Set(bookings?.map(b => b.created_by).filter(Boolean)))
+    const staffIds = Array.from(new Set(bookings?.map(b => b.staff_id).filter(Boolean)))
     
     if (staffIds.length === 0) {
       return NextResponse.json([])
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     if (paymentsError) throw paymentsError
 
     const staffPerformance = bookings?.reduce((acc: any, booking: any) => {
-      const staff = profileMap[booking.created_by]
+      const staff = profileMap[booking.staff_id]
       if (!staff) return acc
       
       const staffKey = staff.id

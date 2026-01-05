@@ -28,7 +28,7 @@ export interface Booking {
   vehicle: boolean;
   status: 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED' | 'CLOSED';
   total_amount: number;
-  created_by?: string;
+  staff_id?: string;
   created_at: string;
 }
 

@@ -90,7 +90,7 @@ export async function getStaffPerformanceReport(startDate: string, endDate: stri
     .from('bookings')
     .select(`
       total_amount,
-      created_by,
+      staff_id,
       staff!bookings_staff_id_fkey(
         full_name,
         role
@@ -104,7 +104,7 @@ export async function getStaffPerformanceReport(startDate: string, endDate: stri
 
   // Group by staff
   const staffStats = bookings?.reduce((acc, booking) => {
-    const staffId = booking.created_by
+    const staffId = booking.staff_id
     const staffName = (booking.staff as any)?.full_name || 'Unknown'
     if (!acc[staffId]) {
       acc[staffId] = {
