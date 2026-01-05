@@ -13,7 +13,13 @@ export async function GET(request: Request) {
       .eq('is_active', true)
       .order('room_type', { ascending: true })
 
-    if (roomsError) throw roomsError
+    if (roomsError) {
+      console.error('Rooms API error:', roomsError)
+      return NextResponse.json(
+        { error: 'Failed to fetch rooms', details: roomsError.message },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ rooms: rooms || [] })
   } catch (error) {
@@ -58,7 +64,15 @@ export async function POST(request: Request) {
       .eq('id', room_id)
       .single()
 
-    if (roomError || !room) {
+    if (roomError) {
+      console.error('Room fetch error:', roomError)
+      return NextResponse.json(
+        { error: 'Room not found', details: roomError.message },
+        { status: 404 }
+      )
+    }
+
+    if (!room) {
       return NextResponse.json(
         { error: 'Room not found' },
         { status: 404 }
@@ -103,7 +117,13 @@ export async function POST(request: Request) {
         .select()
         .single()
 
-      if (customerError) throw customerError
+      if (customerError) {
+        console.error('Customer creation error:', customerError)
+        return NextResponse.json(
+          { error: 'Failed to create customer', details: customerError.message },
+          { status: 500 }
+        )
+      }
       customerId = newCustomer.id
     }
 
@@ -130,7 +150,13 @@ export async function POST(request: Request) {
       `)
       .single()
 
-    if (bookingError) throw bookingError
+    if (bookingError) {
+      console.error('Booking creation error:', bookingError)
+      return NextResponse.json(
+        { error: 'Failed to create booking', details: bookingError.message },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ 
       message: 'Booking created successfully',
