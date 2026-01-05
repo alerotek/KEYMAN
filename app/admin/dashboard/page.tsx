@@ -66,19 +66,42 @@ export default function AdminDashboard() {
     }
   }
 
-  const downloadPDFReport = async () => {
+  const generatePDFReport = async (reportType: 'bookings' | 'revenue' | 'occupancy') => {
     try {
-      const response = await fetch(`/api/dashboard/admin?dateRange=${dateRange}&reportType=pdf`)
+      const response = await fetch('/api/reports/pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: reportType,
+          startDate: data?.dateRange.start || '',
+          endDate: data?.dateRange.end || ''
+        }),
+      })
+
       if (!response.ok) {
         throw new Error('Failed to generate report')
       }
-      const reportData = await response.json()
+
+      // Get the PDF blob
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
       
-      // For now, log the report data. In production, this would generate a PDF
-      console.log('PDF Report Data:', reportData.exportData)
-      alert('PDF report generation would be implemented here with a PDF library')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate report')
+      // Create download link
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      const filename = `${reportType}-report-${data?.dateRange.start || 'date'}_to_${data?.dateRange.end || 'date'}.pdf`
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      console.log(`${reportType} report downloaded successfully`)
+    } catch (error) {
+      console.error('Failed to generate PDF report:', error)
     }
   }
 
@@ -136,12 +159,26 @@ export default function AdminDashboard() {
                 <option value="90">Last 90 days</option>
                 <option value="365">Last year</option>
               </select>
-              <button
-                onClick={downloadPDFReport}
-                className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-sm font-medium"
-              >
-                Download PDF Report
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => generatePDFReport('bookings')}
+                  className="px-3 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 text-sm font-medium"
+                >
+                  Bookings Report
+                </button>
+                <button
+                  onClick={() => generatePDFReport('revenue')}
+                  className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium"
+                >
+                  Revenue Report
+                </button>
+                <button
+                  onClick={() => generatePDFReport('occupancy')}
+                  className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+                >
+                  Occupancy Report
+                </button>
+              </div>
             </div>
           </div>
         </div>
