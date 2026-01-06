@@ -304,7 +304,7 @@ export async function PATCH(request: Request) {
     }
 
     // Validate status transition
-    const validTransitions = {
+    const validTransitions: Record<string, string[]> = {
       'Pending': ['Confirmed', 'Cancelled'],
       'Confirmed': ['Checked-In', 'Cancelled'],
       'Checked-In': ['Checked-Out'],
@@ -312,7 +312,7 @@ export async function PATCH(request: Request) {
       'Cancelled': []
     }
 
-    if (!validTransitions[currentBooking.status]?.includes(status)) {
+    if (!validTransitions[currentBooking.status as string]?.includes(status)) {
       return NextResponse.json(
         { error: `Cannot transition from ${currentBooking.status} to ${status}` },
         { status: 400 }
