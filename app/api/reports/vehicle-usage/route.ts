@@ -45,8 +45,8 @@ export async function GET(request: Request) {
 
     if (paymentsError) throw paymentsError
 
-    const vehicleBookings = bookings?.filter(b => b.vehicle_required) || []
-    const nonVehicleBookings = bookings?.filter(b => !b.vehicle_required) || []
+    const vehicleBookings = bookings?.filter(b => b.vehicle_required && b.vehicle_required === true) || []
+    const nonVehicleBookings = bookings?.filter(b => !b.vehicle_required || b.vehicle_required === false) || []
 
     const vehicleRevenue = payments?.reduce((sum: number, p: any) => {
       const booking = bookings?.find(b => b.id === p.booking_id)
@@ -68,7 +68,8 @@ export async function GET(request: Request) {
       vehicle_revenue: vehicleRevenue,
       non_vehicle_revenue: nonVehicleRevenue,
       vehicle_percentage: Math.round(vehiclePercentage * 100) / 100,
-      non_vehicle_percentage: Math.round(nonVehiclePercentage * 100) / 100
+      non_vehicle_percentage: Math.round(nonVehiclePercentage * 100) / 100,
+      note: "Vehicle parking is complimentary - no additional charges"
     })
   } catch (error) {
     console.error('Vehicle usage report error:', error)

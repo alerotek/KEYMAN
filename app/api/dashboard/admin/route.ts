@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     // Get total revenue within date range
     const { data: payments, error: paymentsError } = await supabase
       .from('payments')
-      .select('amount_paid, paid_at, method')
+      .select('amount_paid, paid_at, method, booking_id')
       .gte('paid_at', startDate)
       .lte('paid_at', endDate)
 
@@ -50,9 +50,9 @@ export async function GET(request: Request) {
         guests_count,
         breakfast,
         vehicle,
-        rooms(room_type, base_price),
-        customers(full_name, email),
-        staff(full_name, role)
+        room_type_id,
+        customer_id,
+        created_by
       `)
       .gte('created_at', startDate)
       .lte('created_at', endDate)
@@ -80,43 +80,38 @@ export async function GET(request: Request) {
 
     // Get room performance
     const roomPerformance = bookings?.reduce((acc, booking) => {
-      const roomData = booking.rooms as any
-      const roomType = roomData?.room_type || 'Unknown'
+      const roomTypeId = booking.room_type_id || 'Unknown'
       
-      if (!acc[roomType]) {
-        acc[roomType] = {
-          room_type: roomType,
+      if (!acc[roomTypeId]) {
+        acc[roomTypeId] = {
+          room_type_id: roomTypeId,
           booking_count: 0,
           total_revenue: 0,
           total_guests: 0
         }
       }
       
-      acc[roomType].booking_count++
-      acc[roomType].total_revenue += booking.total_amount || 0
-      acc[roomType].total_guests += booking.guests_count || 0
+      acc[roomTypeId].booking_count++
+      acc[roomTypeId].total_revenue += booking.total_amount || 0
+      acc[roomTypeId].total_guests += booking.guests_count || 0
       
       return acc
     }, {} as Record<string, any>) || {}
-
+    
     // Get staff performance
     const staffPerformance = bookings?.reduce((acc, booking) => {
-      const staffData = booking.staff as any
-      if (!staffData) return acc
+      const createdById = booking.created_by || 'Unknown'
       
-      const staffId = staffData.full_name
-      
-      if (!acc[staffId]) {
-        acc[staffId] = {
-          staff_name: staffData.full_name,
-          role: staffData.role,
+      if (!acc[createdById]) {
+        acc[createdById] = {
+          created_by: createdById,
           booking_count: 0,
           total_revenue: 0
         }
       }
       
-      acc[staffId].booking_count++
-      acc[staffId].total_revenue += booking.total_amount || 0
+      acc[createdById].booking_count++
+      acc[createdById].total_revenue += booking.total_amount || 0
       
       return acc
     }, {} as Record<string, any>) || {}
@@ -129,8 +124,8 @@ export async function GET(request: Request) {
     }, {} as Record<string, number>) || {}
 
     // Get vehicle usage
-    const vehicleBookings = bookings?.filter(b => b.vehicle).length || 0
-    const vehicleRevenue = bookings?.filter(b => b.vehicle).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
+    const vehicleBookings = bookings?.filter(b => b.vehicle === true).length || 0
+    const vehicleRevenue = bookings?.filter(b => b.vehicle === true).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
 
     // Get breakfast revenue
     const breakfastRevenue = bookings?.filter(b => b.breakfast).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
