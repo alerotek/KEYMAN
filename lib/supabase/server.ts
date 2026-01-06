@@ -30,3 +30,6 @@ export function createSupabaseServer() {
     }
   )
 }
+
+// Also export the client for use in client components
+export { createServerClient as createBrowserClient }
