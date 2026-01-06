@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/secureAuth'
 
@@ -213,6 +213,7 @@ export async function PUT(request: Request) {
     const testResult = await sendTestEmail(test_email, profile.full_name)
     
     // Log audit entry
+    const supabase = createSupabaseServer()
     await supabase
       .from('audit_log')
       .insert({
