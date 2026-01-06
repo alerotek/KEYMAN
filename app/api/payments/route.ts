@@ -1,8 +1,16 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { requireRole } from '@/lib/auth/secureAuth'
+
+export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
+    const authResult = await requireRole('admin')
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
+
     const { searchParams } = new URL(request.url)
     const booking_id = searchParams.get('booking_id')
 
@@ -11,23 +19,51 @@ export async function GET(request: Request) {
     let query = supabase
       .from('payments')
       .select(`
-        *,
-        bookings(
+        id,
+        amount_paid,
+        method,
+        receipt_url,
+        recorded_by,
+        paid_at,
+        status,
+        booking_id,
+        bookings!inner(
           customer_id,
           total_amount,
-          status
+          status,
+          check_in,
+          check_out,
+          guests_count,
+          customers!inner(
+            full_name,
+            email,
+            phone
+          )
         )
       `)
+      .order('paid_at', { ascending: false })
 
     if (booking_id) {
       query = query.eq('booking_id', booking_id)
     }
 
-    const { data, error } = await query.order('payment_date', { ascending: false })
+    const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error('Payments fetch error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch payments' },
+        { status: 500 }
+      )
+    }
 
-    return NextResponse.json({ data: data || [] })
+    return NextResponse.json({ 
+      success: true,
+      payments: data || [],
+      total_count: data?.length || 0,
+      total_revenue: data?.reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+    })
+
   } catch (error) {
     console.error('Payments API error:', error)
     return NextResponse.json(
@@ -129,4 +165,3 @@ export async function PATCH(request: Request) {
     )
   }
 }
-export const dynamic = 'force-dynamic'

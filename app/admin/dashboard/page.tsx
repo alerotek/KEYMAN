@@ -1,32 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { createClient } from '@/lib/auth/secureAuth'
+import { ROLE_HIERARCHY } from '@/lib/auth/secureAuth'
 
-interface DashboardData {
-  metrics: {
-    totalRevenue: number
-    totalBookings: number
-    pendingBookings: number
-    confirmedBookings: number
-    checkedInBookings: number
-    checkedOutBookings: number
-    cancelledBookings: number
-    totalRooms: number
-    occupiedRooms: number
-    occupancyRate: number
-    vehicleBookings: number
-    vehicleRevenue: number
-    breakfastRevenue: number
-    averageBookingValue: number
-  }
-  paymentMethods: Record<string, number>
-  roomPerformance: Array<{
-    room_type: string
-    booking_count: number
-    total_revenue: number
-    total_guests: number
-  }>
+interface DashboardMetrics {
+  totalRevenue: number
+  totalBookings: number
+  pendingBookings: number
+  confirmedBookings: number
+  checkedInBookings: number
+  occupiedRooms: number
+  totalRooms: number
+  occupancyRate: number
+  averageBookingValue: number
+}
+
+interface RecentBooking {
+  id: string
+  status: string
+  check_in: string
+  check_out: string
+  total_amount: number
+  guests_count: number
+  created_at: string
   staffPerformance: Array<{
     staff_name: string
     role: string
