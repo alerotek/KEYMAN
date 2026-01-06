@@ -1,185 +1,293 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth/requireRole'
+import { requireRole } from '@/lib/auth/secureAuth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    // Verify admin role
     const authResult = await requireRole('admin')
     if (authResult instanceof NextResponse) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const { user, profile } = authResult
     const { searchParams } = new URL(request.url)
     const dateRange = searchParams.get('dateRange') || '30'
-    const reportType = searchParams.get('reportType')
 
+    const supabase = createSupabaseServer()
+    
     // Calculate date range
-    const days = parseInt(dateRange)
-    const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    const endDate = new Date().toISOString().split('T')[0]
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - parseInt(dateRange))
 
-    // Get total revenue within date range
-    const { data: payments, error: paymentsError } = await supabase
-      .from('payments')
-      .select('amount_paid, paid_at, method, booking_id')
-      .gte('paid_at', startDate)
-      .lte('paid_at', endDate)
+    // Get comprehensive metrics
+    const [
+      bookingsResult,
+      paymentsResult,
+      roomsResult,
+      staffResult,
+      expensesResult
+    ] = await Promise.all([
+      // Bookings metrics
+      supabase
+        .from('bookings')
+        .select('id, status, total_amount, check_in, check_out, created_at, created_by, room_types!inner(name)')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString()),
 
-    if (paymentsError) throw paymentsError
+      // Payments metrics
+      supabase
+        .from('payments')
+        .select('amount_paid, method, status, paid_at, recorded_by')
+        .gte('paid_at', startDate.toISOString())
+        .lte('paid_at', endDate.toISOString()),
 
-    const totalRevenue = payments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0
-    const paymentMethods = payments?.reduce((acc, payment) => {
-      acc[payment.method] = (acc[payment.method] || 0) + payment.amount_paid
-      return acc
-    }, {} as Record<string, number>) || {}
+      // Room metrics
+      supabase
+        .from('room_inventory_summary')
+        .select('*'),
 
-    // Get booking statistics within date range
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('bookings')
-      .select(`
-        id,
-        status,
-        created_at,
-        check_in,
-        check_out,
-        total_amount,
-        guests_count,
-        breakfast,
-        vehicle,
-        room_type_id,
-        customer_id,
-        created_by
-      `)
-      .gte('created_at', startDate)
-      .lte('created_at', endDate)
-      .order('created_at', { ascending: false })
+      // Staff performance
+      supabase
+        .from('profiles')
+        .select('id, full_name, role, created_at')
+        .eq('role', 'staff'),
 
-    if (bookingsError) throw bookingsError
+      // Expenses
+      supabase
+        .from('expenses')
+        .select('amount, category, created_at')
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+    ])
 
-    const totalBookings = bookings?.length || 0
-    const pendingBookings = bookings?.filter(b => b.status === 'Pending').length || 0
-    const confirmedBookings = bookings?.filter(b => b.status === 'Confirmed').length || 0
-    const checkedInBookings = bookings?.filter(b => b.status === 'Checked-In').length || 0
-    const checkedOutBookings = bookings?.filter(b => b.status === 'Checked-Out').length || 0
-    const cancelledBookings = bookings?.filter(b => b.status === 'Cancelled').length || 0
+    if (bookingsResult.error || paymentsResult.error || roomsResult.error || 
+        staffResult.error || expensesResult.error) {
+      console.error('Dashboard data fetch error:', {
+        bookings: bookingsResult.error,
+        payments: paymentsResult.error,
+        rooms: roomsResult.error,
+        staff: staffResult.error,
+        expenses: expensesResult.error
+      })
+      return NextResponse.json(
+        { error: 'Failed to fetch dashboard data' },
+        { status: 500 }
+      )
+    }
 
-    // Get room occupancy
-    const { data: rooms, error: roomsError } = await supabase
-      .from('rooms')
-      .select('id, room_type, is_active, max_guests')
+    // Calculate metrics
+    const bookings = bookingsResult.data || []
+    const payments = paymentsResult.data || []
+    const rooms = roomsResult.data || []
+    const staff = staffResult.data || []
+    const expenses = expensesResult.data || []
 
-    if (roomsError) throw roomsError
+    const totalRevenue = payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+    const totalBookings = bookings.length
+    const confirmedBookings = bookings.filter(b => b.status === 'Confirmed').length
+    const checkedInBookings = bookings.filter(b => b.status === 'Checked-In').length
+    const pendingBookings = bookings.filter(b => b.status === 'Pending').length
+    const cancelledBookings = bookings.filter(b => b.status === 'Cancelled').length
 
-    const totalRooms = rooms?.filter(r => r.is_active).length || 0
-    const occupiedRooms = checkedInBookings
+    const totalRooms = rooms.reduce((sum, r) => sum + (r.total_rooms || 0), 0)
+    const occupiedRooms = rooms.reduce((sum, r) => sum + (r.occupied_today || 0), 0)
     const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0
 
-    // Get room performance
-    const roomPerformance = bookings?.reduce((acc, booking) => {
-      const roomTypeId = booking.room_type_id || 'Unknown'
-      
-      if (!acc[roomTypeId]) {
-        acc[roomTypeId] = {
-          room_type_id: roomTypeId,
-          booking_count: 0,
-          total_revenue: 0,
-          total_guests: 0
-        }
+    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+    const netProfit = totalRevenue - totalExpenses
+
+    // Payment methods breakdown
+    const paymentMethods: Record<string, { method: string; count: number; total: number }> = payments.reduce((acc, p: any) => {
+      const method = p.method || 'Unknown'
+      if (!acc[method]) {
+        acc[method] = { method, count: 0, total: 0 }
       }
-      
-      acc[roomTypeId].booking_count++
-      acc[roomTypeId].total_revenue += booking.total_amount || 0
-      acc[roomTypeId].total_guests += booking.guests_count || 0
-      
+      acc[method].count++
+      acc[method].total += p.amount_paid || 0
       return acc
-    }, {} as Record<string, any>) || {}
-    
-    // Get staff performance
-    const staffPerformance = bookings?.reduce((acc, booking) => {
-      const createdById = booking.created_by || 'Unknown'
-      
-      if (!acc[createdById]) {
-        acc[createdById] = {
-          created_by: createdById,
-          booking_count: 0,
-          total_revenue: 0
-        }
-      }
-      
-      acc[createdById].booking_count++
-      acc[createdById].total_revenue += booking.total_amount || 0
-      
-      return acc
-    }, {} as Record<string, any>) || {}
+    }, {} as Record<string, { method: string; count: number; total: number }>)
 
-    // Get daily revenue trend
-    const dailyRevenue = payments?.reduce((acc, payment) => {
-      const date = new Date(payment.paid_at).toISOString().split('T')[0]
-      acc[date] = (acc[date] || 0) + payment.amount_paid
-      return acc
-    }, {} as Record<string, number>) || {}
+    // Recent bookings
+    const recentBookings = bookings
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10)
 
-    // Get vehicle usage
-    const vehicleBookings = bookings?.filter(b => b.vehicle === true).length || 0
-    const vehicleRevenue = bookings?.filter(b => b.vehicle === true).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
+    // Staff performance
+    const staffPerformance = staff.map(s => ({
+      staff_name: s.full_name,
+      role: s.role,
+      booking_count: bookings.filter(b => b.created_by === s.id).length,
+      total_revenue: payments
+        .filter(p => p.recorded_by === s.id)
+        .reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+    }))
 
-    // Get breakfast revenue
-    const breakfastRevenue = bookings?.filter(b => b.breakfast).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
+    // Room performance
+    const roomPerformance = rooms.map(r => ({
+      room_type: r.room_type_name,
+      total_rooms: r.total_rooms,
+      occupied_rooms: r.occupied_today,
+      available_rooms: r.available_today,
+      occupancy_rate: r.occupancy_rate_today,
+      revenue: bookings
+        .filter((b: any) => (b as any).room_types?.name === r.room_type_name)
+        .reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0)
+    }))
 
-    const response = {
+    const dashboardData = {
       metrics: {
         totalRevenue,
         totalBookings,
-        pendingBookings,
         confirmedBookings,
         checkedInBookings,
-        checkedOutBookings,
+        pendingBookings,
         cancelledBookings,
         totalRooms,
         occupiedRooms,
         occupancyRate,
-        vehicleBookings,
-        vehicleRevenue,
-        breakfastRevenue,
+        totalExpenses,
+        netProfit,
         averageBookingValue: totalBookings > 0 ? totalRevenue / totalBookings : 0
       },
-      paymentMethods,
-      roomPerformance: Object.values(roomPerformance),
-      staffPerformance: Object.values(staffPerformance),
-      dailyRevenue,
-      recentBookings: bookings?.slice(0, 10) || [],
+      recentBookings,
+      paymentMethods: Object.values(paymentMethods),
+      staffPerformance,
+      roomPerformance,
       dateRange: {
-        start: startDate,
-        end: endDate,
-        days
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        days: parseInt(dateRange)
       }
     }
 
-    // Handle PDF export request
-    if (reportType === 'pdf') {
-      return NextResponse.json({
-        ...response,
-        exportData: {
-          title: 'Keyman Hotel - Admin Report',
-          generatedAt: new Date().toISOString(),
-          dateRange: `${startDate} to ${endDate}`,
-          metrics: response.metrics,
-          roomPerformance: response.roomPerformance,
-          staffPerformance: response.staffPerformance,
-          paymentMethods: response.paymentMethods
-        }
+    // Log dashboard access
+    await supabase
+      .from('audit_log')
+      .insert({
+        action: 'dashboard_accessed',
+        entity: 'admin_dashboard',
+        actor_id: user.id,
+        actor_role: profile.role,
+        details: {
+          accessed_by: profile.full_name,
+          date_range: dateRange,
+          metrics_calculated: Object.keys(dashboardData.metrics).length
+        },
+        created_at: new Date().toISOString()
       })
-    }
 
-    return NextResponse.json(response)
+    return NextResponse.json({
+      success: true,
+      data: dashboardData
+    })
+
   } catch (error) {
     console.error('Admin dashboard error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch admin dashboard data' },
+      { status: 500 }
+    )
+  }
+}
+
+// Generate PDF reports for admin
+export async function POST(request: Request) {
+  try {
+    const authResult = await requireRole('admin')
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
+
+    const { user, profile } = authResult
+    const body = await request.json()
+    const { reportType, startDate, endDate } = body
+
+    if (!reportType || !startDate || !endDate) {
+      return NextResponse.json(
+        { error: 'Report type, start date, and end date are required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createSupabaseServer()
+
+    // Generate report based on type
+    let reportData
+    switch (reportType) {
+      case 'bookings':
+        const { data: bookings } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            room_types!inner(name),
+            customers!inner(full_name, email)
+          `)
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
+        reportData = { bookings, type: 'bookings' }
+        break
+
+      case 'revenue':
+        const { data: revenue } = await supabase
+          .from('payments')
+          .select(`
+            *,
+            bookings!inner(
+              id,
+              total_amount,
+              customers!inner(full_name, email)
+            )
+          `)
+          .gte('paid_at', startDate)
+          .lte('paid_at', endDate)
+        reportData = { revenue, type: 'revenue' }
+        break
+
+      case 'occupancy':
+        const { data: occupancy } = await supabase
+          .from('room_inventory_summary')
+          .select('*')
+        reportData = { occupancy, type: 'occupancy' }
+        break
+
+      default:
+        return NextResponse.json(
+          { error: 'Invalid report type' },
+          { status: 400 }
+        )
+    }
+
+    // Log report generation
+    await supabase
+      .from('audit_log')
+      .insert({
+        action: 'report_generated',
+        entity: 'admin_reports',
+        entity_id: null,
+        actor_id: user.id,
+        actor_role: profile.role,
+        details: {
+          report_type: reportType,
+          start_date: startDate,
+          end_date: endDate,
+          generated_by: profile.full_name
+        },
+        created_at: new Date().toISOString()
+      })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Report data generated successfully',
+      data: reportData
+    })
+
+  } catch (error) {
+    console.error('Report generation error:', error)
+    return NextResponse.json(
+      { error: 'Failed to generate report' },
       { status: 500 }
     )
   }
