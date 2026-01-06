@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Keyman Hotel Extension",
+  "version": "1.0.0",
+  "description": "Hotel management browser extension",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.keyman-hotel.vercel.app/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Keyman Hotel"
+  }
+}

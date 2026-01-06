@@ -10,8 +10,17 @@ async function getAuditLogs(): Promise<AuditLog[]> {
   const { data, error } = await supabase
     .from('audit_log')
     .select(`
-      *,
-      performed_by:profiles(full_name, role)
+      id,
+        action,
+        entity,
+        entity_id,
+        actor_id,
+        actor_role,
+        before_state,
+        after_state,
+        session_id,
+        details,
+        created_at
     `)
     .order('created_at', { ascending: false })
     .limit(100)

@@ -53,10 +53,15 @@ export interface Expense {
 
 export interface AuditLog {
   id: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  action: string;
   entity: string;
   entity_id: string;
-  performed_by: string;
+  actor_id: string;
+  actor_role: string;
+  before_state: any;
+  after_state: any;
+  session_id: string;
+  details: any;
   created_at: string;
 }
 
