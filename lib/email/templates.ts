@@ -1,7 +1,34 @@
 import { createSupabaseServer } from '@/lib/supabase/server'
+import { sendEmail, logEmailToAudit } from './sendEmail'
+
+// Get notification settings from database
+async function getNotificationSettings() {
+  const supabase = createSupabaseServer()
+  const { data } = await supabase
+    .from('notification_settings')
+    .select('*')
+    .single()
+  
+  return data || {
+    enableBookingEmails: true,
+    enablePaymentEmails: true,
+    enableStatusChangeEmails: true,
+    enableWelcomeEmails: true,
+    defaultAdminEmail: 'admin@keymanhotel.com',
+    defaultManagerEmail: 'manager@keymanhotel.com',
+    ccEmails: []
+  }
+}
 
 export async function sendBookingConfirmationEmail(booking: any) {
   try {
+    const settings = await getNotificationSettings()
+    
+    if (!settings.enableBookingEmails) {
+      console.log('Booking confirmation emails disabled')
+      return { success: true, message: 'Email disabled' }
+    }
+
     const supabase = createSupabaseServer()
     
     // HTML email template for customer
@@ -90,19 +117,26 @@ export async function sendBookingConfirmationEmail(booking: any) {
 </html>
 `
 
-    // Log the customer email notification
-    await supabase
-      .from('email_notifications')
-      .insert([{
-        type: 'booking_confirmation',
-        recipient_email: booking.customers?.email,
+    // Send to customer
+    const customerEmail = booking.customers?.email || booking.guest?.email
+    if (customerEmail) {
+      const result = await sendEmail({
+        to: customerEmail,
         subject: 'Your Booking at Keyman Hotel is Confirmed',
-        message: customerEmailHTML,
-        status: 'sent',
-        created_at: new Date().toISOString()
-      }])
+        html: customerEmailHTML
+      })
+      
+      await logEmailToAudit(
+        'booking_confirmation_client',
+        customerEmail,
+        'Your Booking at Keyman Hotel is Confirmed',
+        customerEmailHTML,
+        result.success ? 'sent' : 'failed',
+        result.error
+      )
+    }
 
-    // Send to admin and manager
+    // Send internal notification
     await sendEmailToAdmins('booking_confirmation', {
       subject: 'New Booking Created – Action Required',
       message: `
@@ -139,8 +173,8 @@ Please prepare for the guest's arrival.
       })
     }
 
-    console.log('Booking confirmation email sent to:', booking.customers?.email)
-    return { success: true, message: 'Email sent successfully' }
+    console.log('Booking confirmation email processed')
+    return { success: true, message: 'Email processed successfully' }
   } catch (error) {
     console.error('Failed to send booking confirmation email:', error)
     return { success: false, message: 'Failed to send email' }
@@ -518,50 +552,81 @@ export async function sendWelcomeEmail(customer: any) {
 }
 
 async function sendEmailToAdmins(type: string, data: any) {
-  const supabase = createSupabaseServer()
-  
-  // Get admin and manager emails
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('email, role')
-    .in('role', ['admin', 'manager'])
+  try {
+    const settings = await getNotificationSettings()
+    const supabase = createSupabaseServer()
+    
+    // Get admin and manager emails
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('email, role')
+      .in('role', ['admin', 'manager'])
 
-  if (staff && staff.length > 0) {
-    for (const staffMember of staff) {
-      await supabase
-        .from('email_notifications')
-        .insert([{
-          type: type,
-          recipient_email: staffMember.email,
-          subject: data.subject,
-          message: data.message,
-          status: 'sent',
-          created_at: new Date().toISOString()
-        }])
+    if (staff && staff.length > 0) {
+      const recipients = staff.map(s => s.email)
+      const ccEmails = settings.ccEmails || []
+      
+      const result = await sendEmail({
+        to: recipients,
+        cc: ccEmails.length > 0 ? ccEmails : undefined,
+        subject: data.subject,
+        html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2 style="color: #d97706;">Keyman Hotel - Internal Notification</h2>
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <pre style="white-space: pre-wrap; font-family: monospace; background: white; padding: 15px; border-radius: 4px; border: 1px solid #e5e7eb;">${data.message}</pre>
+          </div>
+          <p style="color: #6b7280; font-size: 12px;">This is an automated internal notification.</p>
+        </div>`
+      })
+      
+      await logEmailToAudit(
+        `${type}_internal`,
+        recipients.join(', '),
+        data.subject,
+        data.message,
+        result.success ? 'sent' : 'failed',
+        result.error
+      )
     }
+  } catch (error) {
+    console.error('Failed to send admin emails:', error)
   }
 }
 
 async function sendEmailToStaff(staffId: string, type: string, data: any) {
-  const supabase = createSupabaseServer()
-  
-  // Get staff member email
-  const { data: staff } = await supabase
-    .from('staff')
-    .select('email')
-    .eq('id', staffId)
-    .single()
+  try {
+    const supabase = createSupabaseServer()
+    
+    // Get staff member email
+    const { data: staff } = await supabase
+      .from('staff')
+      .select('email')
+      .eq('id', staffId)
+      .single()
 
-  if (staff) {
-    await supabase
-      .from('email_notifications')
-      .insert([{
-        type: type,
-        recipient_email: staff.email,
+    if (staff) {
+      const result = await sendEmail({
+        to: staff.email,
         subject: data.subject,
-        message: data.message,
-        status: 'sent',
-        created_at: new Date().toISOString()
-      }])
+        html: `<div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <h2 style="color: #d97706;">Keyman Hotel - Staff Notification</h2>
+          <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <pre style="white-space: pre-wrap; font-family: monospace; background: white; padding: 15px; border-radius: 4px; border: 1px solid #e5e7eb;">${data.message}</pre>
+          </div>
+          <p style="color: #6b7280; font-size: 12px;">This is an automated staff notification.</p>
+        </div>`
+      })
+      
+      await logEmailToAudit(
+        `${type}_staff`,
+        staff.email,
+        data.subject,
+        data.message,
+        result.success ? 'sent' : 'failed',
+        result.error
+      )
+    }
+  } catch (error) {
+    console.error('Failed to send staff email:', error)
   }
 }
