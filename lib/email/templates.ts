@@ -563,7 +563,7 @@ async function sendEmailToAdmins(type: string, data: any) {
       .in('role', ['admin', 'manager'])
 
     if (staff && staff.length > 0) {
-      const recipients = staff.map(s => s.email)
+      const recipients = staff.map((s: any) => s.email)
       const ccEmails = settings.ccEmails || []
       
       const result = await sendEmail({

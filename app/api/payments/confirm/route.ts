@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 import { sendPaymentConfirmationEmail } from '@/lib/email/service'

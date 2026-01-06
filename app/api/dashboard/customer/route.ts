@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     if (bookingsError) throw bookingsError
 
     // Get payments for customer's bookings
-    const bookingIds = bookings?.map(b => b.id) || []
+    const bookingIds = bookings?.map((b: any) => b.id) || []
     let payments = []
     
     if (bookingIds.length > 0) {
@@ -45,25 +45,25 @@ export async function GET(request: Request) {
     }
 
     // Calculate customer's total payments
-    const totalPayments = payments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0
+    const totalPayments = payments?.reduce((sum: number, payment: any) => sum + payment.amount_paid, 0) || 0
 
     // Get booking statistics
     const totalBookings = bookings?.length || 0
-    const pendingBookings = bookings?.filter(b => b.status === 'Pending').length || 0
-    const confirmedBookings = bookings?.filter(b => b.status === 'Confirmed').length || 0
-    const checkedInBookings = bookings?.filter(b => b.status === 'Checked-In').length || 0
-    const checkedOutBookings = bookings?.filter(b => b.status === 'Checked-Out').length || 0
-    const activeBookings = bookings?.filter(b => ['Confirmed', 'Checked-In'].includes(b.status)).length || 0
+    const pendingBookings = bookings?.filter((b: any) => b.status === 'Pending').length || 0
+    const confirmedBookings = bookings?.filter((b: any) => b.status === 'Confirmed').length || 0
+    const checkedInBookings = bookings?.filter((b: any) => b.status === 'Checked-In').length || 0
+    const checkedOutBookings = bookings?.filter((b: any) => b.status === 'Checked-Out').length || 0
+    const activeBookings = bookings?.filter((b: any) => ['Confirmed', 'Checked-In'].includes(b.status)).length || 0
 
     // Get upcoming bookings
     const today = new Date()
-    const upcomingBookings = bookings?.filter(booking => {
+    const upcomingBookings = bookings?.filter((booking: any) => {
       const checkInDate = new Date(booking.check_in)
       return checkInDate >= today && ['Confirmed', 'Pending'].includes(booking.status)
     }) || []
 
     // Get past bookings
-    const pastBookings = bookings?.filter(booking => {
+    const pastBookings = bookings?.filter((booking: any) => {
       const checkOutDate = new Date(booking.check_out)
       return checkOutDate < today || booking.status === 'Checked-Out'
     }) || []

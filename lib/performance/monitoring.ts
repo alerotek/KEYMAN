@@ -106,9 +106,9 @@ export function withPerformanceMonitoring(handler: (req: NextRequest) => Promise
     // Track query count (simplified)
     let queryCount = 0
     const originalFetch = global.fetch
-    global.fetch = (...args) => {
+    global.fetch = (...args: any[]) => {
       queryCount++
-      return originalFetch(...args)
+      return originalFetch(...(args as [any, ...any[]]))
     }
 
     try {

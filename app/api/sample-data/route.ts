@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -100,7 +100,7 @@ export async function POST() {
       .select('id, room_type')
 
     const roomMap: Record<string, string> = {}
-    roomData?.forEach(room => {
+    roomData?.forEach((room: any) => {
       roomMap[room.room_type] = room.id
     })
 

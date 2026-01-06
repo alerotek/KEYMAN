@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     // Check for date conflicts
-    const hasConflict = existingBookings?.some(booking => {
+    const hasConflict = existingBookings?.some((booking: any) => {
       const existingCheckIn = new Date(booking.check_in)
       const existingCheckOut = new Date(booking.check_out)
       const newCheckIn = new Date(offline_booking.roomData.check_in)

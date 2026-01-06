@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     }
 
     // Get unique customer IDs
-    const customerIds = Array.from(new Set(bookings?.map(b => b.customer_id).filter(Boolean)))
+    const customerIds = Array.from(new Set(bookings?.map((b: any) => b.customer_id).filter(Boolean)))
     
     if (customerIds.length === 0) {
       return NextResponse.json([])

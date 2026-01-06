@@ -62,7 +62,7 @@ export async function generateOccupancyReport(startDate: string, endDate: string
 
   // Calculate current occupancy
   const currentDate = new Date().toISOString().split('T')[0]
-  const currentBookings = bookings?.filter(booking => 
+  const currentBookings = bookings?.filter((booking: any) => 
     booking.check_in <= currentDate && booking.check_out >= currentDate
   ) || []
 
@@ -78,7 +78,7 @@ export async function generateOccupancyReport(startDate: string, endDate: string
     return acc
   }, {}) || {}
 
-  const occupancyByRoomType = Object.entries(roomsByType).map(([roomType, roomList]) => {
+  const occupancyByRoomType = Object.entries(roomsByType).map(([roomType, roomList]: [string, any]) => {
     const totalRoomsByType = roomList.length
     const occupiedRoomsByType = currentBookings.filter(booking => 
       (booking.rooms as any)?.room_type === roomType

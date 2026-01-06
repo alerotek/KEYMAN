@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/secureAuth'
 
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
       success: true,
       payments: data || [],
       total_count: data?.length || 0,
-      total_revenue: data?.reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+      total_revenue: data?.reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0)
     })
 
   } catch (error) {

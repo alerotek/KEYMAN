@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -207,7 +207,7 @@ export async function PUT(request: Request) {
         'Before State', 'After State', 'Session ID', 'Details', 'Created At'
       ]
       
-      const csvRows = data.map(log => [
+      const csvRows = data.map((log: any) => [
         log.id,
         log.action,
         log.entity,
@@ -223,7 +223,7 @@ export async function PUT(request: Request) {
       
       const csvContent = [
         headers.join(','),
-        ...csvRows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ...csvRows.map((row: any) => row.map((cell: any) => `"${cell}"`).join(','))
       ].join('\n')
 
       return new NextResponse(csvContent, {

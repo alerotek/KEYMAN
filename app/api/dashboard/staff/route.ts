@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 
@@ -59,25 +59,25 @@ export async function GET(request: Request) {
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
 
     // Filter today's check-ins and check-outs
-    const todayCheckIns = bookings?.filter(booking => {
+    const todayCheckIns = bookings?.filter((booking: any) => {
       const checkInDate = new Date(booking.check_in)
       return checkInDate >= todayStart && checkInDate < todayEnd && booking.status === 'Confirmed'
     }) || []
 
-    const todayCheckOuts = bookings?.filter(booking => {
+    const todayCheckOuts = bookings?.filter((booking: any) => {
       const checkOutDate = new Date(booking.check_out)
       return checkOutDate >= todayStart && checkOutDate < todayEnd && booking.status === 'Checked-In'
     }) || []
 
     // Get booking statistics
     const totalBookings = bookings?.length || 0
-    const pendingBookings = bookings?.filter(b => b.status === 'Pending').length || 0
-    const confirmedBookings = bookings?.filter(b => b.status === 'Confirmed').length || 0
-    const checkedInBookings = bookings?.filter(b => b.status === 'Checked-In').length || 0
-    const checkedOutBookings = bookings?.filter(b => b.status === 'Checked-Out').length || 0
+    const pendingBookings = bookings?.filter((b: any) => b.status === 'Pending').length || 0
+    const confirmedBookings = bookings?.filter((b: any) => b.status === 'Confirmed').length || 0
+    const checkedInBookings = bookings?.filter((b: any) => b.status === 'Checked-In').length || 0
+    const checkedOutBookings = bookings?.filter((b: any) => b.status === 'Checked-Out').length || 0
 
     // Calculate revenue from all bookings
-    const bookingIds = bookings?.map(b => b.id) || []
+    const bookingIds = bookings?.map((b: any) => b.id) || []
     let totalRevenue = 0
 
     if (bookingIds.length > 0) {
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
         .in('booking_id', bookingIds)
 
       if (!paymentsError) {
-        totalRevenue = payments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0
+        totalRevenue = payments?.reduce((sum: number, payment: any) => sum + payment.amount_paid, 0) || 0
       }
     }
 
@@ -99,7 +99,7 @@ export async function GET(request: Request) {
 
     let staffRevenue = 0
     if (!staffBookingsError && staffBookings) {
-      const staffBookingIds = staffBookings.map(b => b.id)
+      const staffBookingIds = staffBookings.map((b: any) => b.id)
       if (staffBookingIds.length > 0) {
         const { data: staffPayments, error: staffPaymentsError } = await supabase
           .from('payments')
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
           .in('booking_id', staffBookingIds)
 
         if (!staffPaymentsError) {
-          staffRevenue = staffPayments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0
+          staffRevenue = staffPayments?.reduce((sum: number, payment: any) => sum + payment.amount_paid, 0) || 0
         }
       }
     }

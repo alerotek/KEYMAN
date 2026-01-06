@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
     if (bookingsError) throw bookingsError
 
-    const bookingIds = bookings?.map(b => b.id) || []
+    const bookingIds = bookings?.map((b: any) => b.id) || []
     
     if (bookingIds.length === 0) {
       return NextResponse.json({
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
 
     if (outstandingError) throw outstandingError
 
-    const outstandingIds = outstandingData?.map(b => b.id) || []
+    const outstandingIds = outstandingData?.map((b: any) => b.id) || []
     
     const { data: outstandingPayments, error: outstandingPaymentsError } = await supabase
       .from('payments')

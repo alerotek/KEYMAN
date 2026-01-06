@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
     if (bookingsError) throw bookingsError
 
-    const bookingIds = bookings?.map(b => b.id) || []
+    const bookingIds = bookings?.map((b: any) => b.id) || []
     
     if (bookingIds.length === 0) {
       return NextResponse.json({
@@ -45,16 +45,16 @@ export async function GET(request: Request) {
 
     if (paymentsError) throw paymentsError
 
-    const vehicleBookings = bookings?.filter(b => b.vehicle_required && b.vehicle_required === true) || []
-    const nonVehicleBookings = bookings?.filter(b => !b.vehicle_required || b.vehicle_required === false) || []
+    const vehicleBookings = bookings?.filter((b: any) => b.vehicle_required && b.vehicle_required === true) || []
+    const nonVehicleBookings = bookings?.filter((b: any) => !b.vehicle_required || b.vehicle_required === false) || []
 
     const vehicleRevenue = payments?.reduce((sum: number, p: any) => {
-      const booking = bookings?.find(b => b.id === p.booking_id)
+      const booking = bookings?.find((b: any) => b.id === p.booking_id)
       return booking?.vehicle_required ? sum + p.amount : sum
     }, 0) || 0
 
     const nonVehicleRevenue = payments?.reduce((sum: number, p: any) => {
-      const booking = bookings?.find(b => b.id === p.booking_id)
+      const booking = bookings?.find((b: any) => b.id === p.booking_id)
       return !booking?.vehicle_required ? sum + p.amount : sum
     }, 0) || 0
 

@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 
@@ -30,8 +30,8 @@ export async function GET(request: Request) {
 
     if (paymentsError) throw paymentsError
 
-    const totalRevenue = payments?.reduce((sum, payment) => sum + payment.amount_paid, 0) || 0
-    const paymentMethods = payments?.reduce((acc, payment) => {
+    const totalRevenue = payments?.reduce((sum: number, payment: any) => sum + payment.amount_paid, 0) || 0
+    const paymentMethods = payments?.reduce((acc: any, payment: any) => {
       acc[payment.method] = (acc[payment.method] || 0) + payment.amount_paid
       return acc
     }, {} as Record<string, number>) || {}
@@ -60,11 +60,11 @@ export async function GET(request: Request) {
     if (bookingsError) throw bookingsError
 
     const totalBookings = bookings?.length || 0
-    const pendingBookings = bookings?.filter(b => b.status === 'Pending').length || 0
-    const confirmedBookings = bookings?.filter(b => b.status === 'Confirmed').length || 0
-    const checkedInBookings = bookings?.filter(b => b.status === 'Checked-In').length || 0
-    const checkedOutBookings = bookings?.filter(b => b.status === 'Checked-Out').length || 0
-    const cancelledBookings = bookings?.filter(b => b.status === 'Cancelled').length || 0
+    const pendingBookings = bookings?.filter((b: any) => b.status === 'Pending').length || 0
+    const confirmedBookings = bookings?.filter((b: any) => b.status === 'Confirmed').length || 0
+    const checkedInBookings = bookings?.filter((b: any) => b.status === 'Checked-In').length || 0
+    const checkedOutBookings = bookings?.filter((b: any) => b.status === 'Checked-Out').length || 0
+    const cancelledBookings = bookings?.filter((b: any) => b.status === 'Cancelled').length || 0
 
     // Get room occupancy
     const { data: rooms, error: roomsError } = await supabase
@@ -73,12 +73,12 @@ export async function GET(request: Request) {
 
     if (roomsError) throw roomsError
 
-    const totalRooms = rooms?.filter(r => r.is_active).length || 0
+    const totalRooms = rooms?.filter((r: any) => r.is_active).length || 0
     const occupiedRooms = checkedInBookings
     const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0
 
     // Get room performance
-    const roomPerformance = bookings?.reduce((acc, booking) => {
+    const roomPerformance = bookings?.reduce((acc: any, booking: any) => {
       const roomTypeId = booking.room_type_id || 'Unknown'
       
       if (!acc[roomTypeId]) {
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
     }, {} as Record<string, any>) || {}
     
     // Get staff performance
-    const staffPerformance = bookings?.reduce((acc, booking) => {
+    const staffPerformance = bookings?.reduce((acc: any, booking: any) => {
       const createdById = booking.created_by || 'Unknown'
       
       if (!acc[createdById]) {
@@ -116,18 +116,18 @@ export async function GET(request: Request) {
     }, {} as Record<string, any>) || {}
 
     // Get daily revenue trend
-    const dailyRevenue = payments?.reduce((acc, payment) => {
+    const dailyRevenue = payments?.reduce((acc: any, payment: any) => {
       const date = new Date(payment.paid_at).toISOString().split('T')[0]
       acc[date] = (acc[date] || 0) + payment.amount_paid
       return acc
     }, {} as Record<string, number>) || {}
 
     // Get vehicle usage
-    const vehicleBookings = bookings?.filter(b => b.vehicle === true).length || 0
-    const vehicleRevenue = bookings?.filter(b => b.vehicle === true).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
+    const vehicleBookings = bookings?.filter((b: any) => b.vehicle === true).length || 0
+    const vehicleRevenue = bookings?.filter((b: any) => b.vehicle === true).reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0) || 0
 
     // Get breakfast revenue
-    const breakfastRevenue = bookings?.filter(b => b.breakfast).reduce((sum, b) => sum + (b.total_amount || 0), 0) || 0
+    const breakfastRevenue = bookings?.filter((b: any) => b.breakfast).reduce((sum: number, b: any) => sum + (b.total_amount || 0), 0) || 0
 
     return NextResponse.json({
       metrics: {

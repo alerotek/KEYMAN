@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/secureAuth'
 
@@ -85,48 +85,48 @@ export async function GET(request: Request) {
     const staff = staffResult.data || []
     const expenses = expensesResult.data || []
 
-    const totalRevenue = payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+    const totalRevenue = payments.reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0)
     const totalBookings = bookings.length
-    const confirmedBookings = bookings.filter(b => b.status === 'Confirmed').length
-    const checkedInBookings = bookings.filter(b => b.status === 'Checked-In').length
-    const pendingBookings = bookings.filter(b => b.status === 'Pending').length
-    const cancelledBookings = bookings.filter(b => b.status === 'Cancelled').length
+    const confirmedBookings = bookings.filter((b: any) => b.status === 'Confirmed').length
+    const checkedInBookings = bookings.filter((b: any) => b.status === 'Checked-In').length
+    const pendingBookings = bookings.filter((b: any) => b.status === 'Pending').length
+    const cancelledBookings = bookings.filter((b: any) => b.status === 'Cancelled').length
 
-    const totalRooms = rooms.reduce((sum, r) => sum + (r.total_rooms || 0), 0)
-    const occupiedRooms = rooms.reduce((sum, r) => sum + (r.occupied_today || 0), 0)
+    const totalRooms = rooms.reduce((sum: number, r: any) => sum + (r.total_rooms || 0), 0)
+    const occupiedRooms = rooms.reduce((sum: number, r: any) => sum + (r.occupied_today || 0), 0)
     const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0
 
-    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+    const totalExpenses = expenses.reduce((sum: number, e: any) => sum + (e.amount || 0), 0)
     const netProfit = totalRevenue - totalExpenses
 
     // Payment methods breakdown
-    const paymentMethods: Record<string, { method: string; count: number; total: number }> = payments.reduce((acc, p: any) => {
+    const paymentMethods: Record<string, { method: string; count: number; total: number }> = payments.reduce((acc: any, p: any) => {
       const method = p.method || 'Unknown'
       if (!acc[method]) {
         acc[method] = { method, count: 0, total: 0 }
       }
       acc[method].count++
-      acc[method].total += p.amount_paid || 0
+      acc[method].total += (p as any).amount_paid || 0
       return acc
     }, {} as Record<string, { method: string; count: number; total: number }>)
 
     // Recent bookings
     const recentBookings = bookings
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 10)
 
     // Staff performance
-    const staffPerformance = staff.map(s => ({
+    const staffPerformance = staff.map((s: any) => ({
       staff_name: s.full_name,
       role: s.role,
-      booking_count: bookings.filter(b => b.created_by === s.id).length,
+      booking_count: bookings.filter((b: any) => b.created_by === s.id).length,
       total_revenue: payments
-        .filter(p => p.recorded_by === s.id)
-        .reduce((sum, p) => sum + (p.amount_paid || 0), 0)
+        .filter((p: any) => p.recorded_by === s.id)
+        .reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0)
     }))
 
     // Room performance
-    const roomPerformance = rooms.map(r => ({
+    const roomPerformance = rooms.map((r: any) => ({
       room_type: r.room_type_name,
       total_rooms: r.total_rooms,
       occupied_rooms: r.occupied_today,
