@@ -10,10 +10,18 @@ export async function GET() {
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select(`
-        *,
-        rooms(room_type, room_number),
-        customers(full_name, email, phone),
-        staff(full_name, role)
+        id,
+        status,
+        created_at,
+        check_in,
+        check_out,
+        total_amount,
+        guests_count,
+        breakfast,
+        vehicle,
+        room_type_id,
+        customer_id,
+        created_by
       `)
       .order('created_at', { ascending: false })
       .limit(50)

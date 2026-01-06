@@ -12,10 +12,18 @@ export async function GET(request: Request) {
     let query = supabase
       .from('bookings')
       .select(`
-        *,
-        rooms(room_type, room_number),
-        customers(full_name, email),
-        staff(full_name, role)
+        id,
+        status,
+        created_at,
+        check_in,
+        check_out,
+        total_amount,
+        guests_count,
+        breakfast,
+        vehicle,
+        room_type_id,
+        customer_id,
+        created_by
       `)
       .neq('status', 'Cancelled')
 
