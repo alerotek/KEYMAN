@@ -1,11 +1,11 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     const today = new Date().toISOString().split('T')[0]
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]

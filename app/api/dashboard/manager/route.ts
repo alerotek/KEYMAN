@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const { searchParams } = new URL(request.url)
     const dateRange = searchParams.get('dateRange') || '30'
 
@@ -28,7 +28,13 @@ export async function GET(request: Request) {
       .gte('paid_at', startDate)
       .lte('paid_at', endDate)
 
-    if (paymentsError) throw paymentsError
+    if (paymentsError) {
+      console.error('Payments query error:', paymentsError)
+      return NextResponse.json(
+        { error: 'Failed to fetch payments', details: paymentsError.message },
+        { status: 500 }
+      )
+    }
 
     const totalRevenue = payments?.reduce((sum: number, payment: any) => sum + payment.amount_paid, 0) || 0
     const paymentMethods = payments?.reduce((acc: any, payment: any) => {
@@ -57,7 +63,13 @@ export async function GET(request: Request) {
       .lte('created_at', endDate)
       .order('created_at', { ascending: false })
 
-    if (bookingsError) throw bookingsError
+    if (bookingsError) {
+      console.error('Bookings query error:', bookingsError)
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings', details: bookingsError.message },
+        { status: 500 }
+      )
+    }
 
     const totalBookings = bookings?.length || 0
     const pendingBookings = bookings?.filter((b: any) => b.status === 'Pending').length || 0
@@ -71,7 +83,13 @@ export async function GET(request: Request) {
       .from('rooms')
       .select('id, room_type, is_active, max_guests')
 
-    if (roomsError) throw roomsError
+    if (roomsError) {
+      console.error('Rooms query error:', roomsError)
+      return NextResponse.json(
+        { error: 'Failed to fetch rooms', details: roomsError.message },
+        { status: 500 }
+      )
+    }
 
     const totalRooms = rooms?.filter((r: any) => r.is_active).length || 0
     const occupiedRooms = checkedInBookings

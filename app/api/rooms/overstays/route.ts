@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 import { RoomInventoryManager } from '@/lib/inventory/roomInventoryManager'
@@ -81,7 +81,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     if (action === 'checkout') {
       // Mark as checked out

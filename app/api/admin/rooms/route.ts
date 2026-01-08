@@ -1,15 +1,23 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     const { data: rooms, error: roomsError } = await supabase
       .from('rooms')
-      .select('*')
+      .select(`
+        id,
+        room_type,
+        max_guests,
+        base_price,
+        breakfast_price,
+        is_active
+      `)
+      .eq('is_active', true)
       .order('room_type', { ascending: true })
 
     if (roomsError) {
@@ -20,7 +28,14 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ rooms: rooms || [] })
+    // Transform data to match frontend expectations
+    const transformedRooms = (rooms || []).map(room => ({
+      id: room.id,
+      name: room.room_type,
+      available_rooms: room.max_guests
+    }))
+
+    return NextResponse.json({ rooms: transformedRooms })
   } catch (error) {
     console.error('Rooms API error:', error)
     return NextResponse.json(
@@ -49,7 +64,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     const { data: room, error: roomError } = await supabase
       .from('rooms')

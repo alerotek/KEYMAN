@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 import { sendPaymentConfirmationEmail } from '@/lib/email/templates'
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get payment details
     const { data: payment, error: paymentError } = await supabase

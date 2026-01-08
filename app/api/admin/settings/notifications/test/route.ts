@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 import { sendEmail, logEmailToAudit } from '@/lib/email/sendEmail'
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get notification settings for test email
     const { data: settings } = await supabase

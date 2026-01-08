@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 // Master Admin Bootstrap Script
@@ -7,7 +7,7 @@ const MASTER_ADMIN_EMAIL = 'kevinalerotek@gmail.com'
 
 export async function POST() {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Check if master admin exists in staff table first
     const { data: staffUser, error: staffCheckError } = await supabase
@@ -111,7 +111,7 @@ export async function POST() {
 // GET endpoint to check master admin status
 export async function GET() {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Check staff record
     const { data: staffUser, error: staffError } = await supabase

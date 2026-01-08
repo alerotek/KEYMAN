@@ -1,9 +1,9 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Fix: Remove invalid relationship and use separate queries
     const { data: bookings, error: bookingsError } = await supabase

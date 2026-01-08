@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     console.log('Fetching rooms...')
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     const { data: rooms, error: roomsError } = await supabase
       .from('rooms')

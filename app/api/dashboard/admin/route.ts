@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/secureAuth'
 
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const dateRange = searchParams.get('dateRange') || '30'
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     // Calculate date range
     const endDate = new Date()
@@ -212,7 +212,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Generate report based on type
     let reportData

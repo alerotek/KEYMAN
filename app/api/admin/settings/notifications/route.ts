@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -12,7 +12,7 @@ export async function GET() {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get notification settings
     const { data, error } = await supabase
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       ccEmails
     } = body
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Update or insert notification settings
     const { data, error } = await supabase

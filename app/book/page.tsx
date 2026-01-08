@@ -50,11 +50,21 @@ export default function BookPage() {
   const fetchRooms = async () => {
     try {
       const response = await fetch('/api/bookings/public')
+      if (!response.ok) {
+        console.error('Rooms API error:', response.status)
+        setError('Failed to load rooms')
+        return
+      }
+      
       const data = await response.json()
       if (data.rooms) {
         setRooms(data.rooms)
+      } else if (data.error) {
+        console.error('Rooms API error:', data.error)
+        setError('Failed to load rooms')
       }
     } catch (err) {
+      console.error('Rooms fetch error:', err)
       setError('Failed to load rooms')
     }
   }

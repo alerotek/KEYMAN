@@ -1,11 +1,11 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     const { data: staff, error: staffError } = await supabase
       .from('staff')
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     const { data: newStaff, error: staffError } = await supabase
       .from('staff')

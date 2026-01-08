@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const start_date = searchParams.get('start_date')
     const end_date = searchParams.get('end_date')
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     let bookingsQuery = supabase
       .from('bookings')

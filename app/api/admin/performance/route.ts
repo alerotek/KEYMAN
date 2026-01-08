@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'summary'
 
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Log performance metrics
     const { error } = await supabase.rpc('log_api_performance', {
@@ -144,7 +144,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Check if query already exists
     const { data: existingQuery } = await supabase
@@ -205,7 +205,7 @@ export async function DELETE(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Run cleanup
     const { error } = await supabase.rpc('cleanup_performance_data')

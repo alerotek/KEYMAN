@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/secureAuth'
 
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const booking_id = searchParams.get('booking_id')
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     let query = supabase
       .from('payments')
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     const { data, error } = await supabase
       .from('payments')
@@ -131,7 +131,7 @@ export async function PATCH(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     const { data: payments, error: paymentsError } = await supabase
       .from('payments')

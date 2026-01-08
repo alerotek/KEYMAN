@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 import { sendBookingStatusChangeEmail } from '@/lib/email/service'
@@ -17,7 +17,7 @@ export async function PATCH(
     }
 
     const { user } = authResult
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const bookingId = params.id
 
     const body = await request.json()

@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // Get current active shifts
 export async function GET(request: Request) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const { searchParams } = new URL(request.url)
     const summary = searchParams.get('summary') === 'true'
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Create shift
     const { data, error } = await supabase
@@ -125,7 +125,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Update shift
     const { data, error } = await supabase
@@ -192,7 +192,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Delete shift
     const { error } = await supabase

@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -12,7 +12,7 @@ export async function GET() {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get current settings from database or return defaults
     const { data: settings } = await supabase
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const settings = await request.json()
 
     // Validate settings

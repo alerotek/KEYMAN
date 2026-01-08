@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -11,7 +11,7 @@ export async function GET() {
       SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY
     })
     
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     // Test simple connection
     const { data, error } = await supabase

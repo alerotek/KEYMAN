@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 import { sendPaymentConfirmationEmail } from '@/lib/email/service'
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const formData = await request.formData()
     
     const bookingId = formData.get('bookingId') as string

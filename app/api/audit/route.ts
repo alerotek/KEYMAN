@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { AuditLog } from '@/lib/types'
 
@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     const { data: auditLogs, error } = await supabase
       .from('audit_log')
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const body = await request.json()
     
     const { action, entity, entity_id, performed_by } = body

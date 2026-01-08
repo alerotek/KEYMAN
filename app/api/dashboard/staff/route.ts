@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireMinimumRole } from '@/lib/auth/requireRole'
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     }
 
     const { user } = authResult
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const dateFrom = searchParams.get('dateFrom')
@@ -51,7 +51,13 @@ export async function GET(request: Request) {
 
     const { data: bookings, error: bookingsError } = await query
 
-    if (bookingsError) throw bookingsError
+    if (bookingsError) {
+      console.error('Bookings query error:', bookingsError)
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings', details: bookingsError.message },
+        { status: 500 }
+      )
+    }
 
     // Get today's date
     const today = new Date()

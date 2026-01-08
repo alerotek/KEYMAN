@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     }
 
     const { user } = authResult
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get customer's bookings with related data
     const { data: bookings, error: bookingsError } = await supabase

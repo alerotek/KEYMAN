@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { sendBookingConfirmationEmail } from '@/lib/email/service'
 
@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     const { data: rooms, error: roomsError } = await supabase
       .from('rooms')
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get room details for pricing
     const { data: room, error: roomError } = await supabase

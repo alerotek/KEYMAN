@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -6,7 +6,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const date = searchParams.get('date')
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     const targetDate = date || new Date().toISOString().split('T')[0]
     const startDate = `${targetDate}T00:00:00.000Z`

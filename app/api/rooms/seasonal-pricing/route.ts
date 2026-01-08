@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 import { RoomInventoryManager } from '@/lib/inventory/roomInventoryManager'
@@ -103,7 +103,7 @@ export async function PUT(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Update seasonal pricing
     const { data, error } = await supabase
@@ -170,7 +170,7 @@ export async function DELETE(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Soft delete by setting active to false
     const { error } = await supabase

@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/secureAuth'
 
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     const { data, error } = await supabase
       .from('email_config')
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Check if config already exists
     const { data: existingConfig } = await supabase
@@ -213,7 +213,7 @@ export async function PUT(request: Request) {
     const testResult = await sendTestEmail(test_email, profile.full_name)
     
     // Log audit entry
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     await supabase
       .from('audit_log')
       .insert({

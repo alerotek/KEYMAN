@@ -1,4 +1,4 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth/requireRole'
 
@@ -13,7 +13,7 @@ export async function GET(request: Request) {
       return authResult
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     const { searchParams } = new URL(request.url)
     
     // Pagination parameters
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Get detailed audit log
     const { data, error } = await supabase
@@ -160,7 +160,7 @@ export async function PUT(request: Request) {
     const body = await request.json()
     const { format = 'json', filters = {} } = body
 
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
 
     // Build query with filters
     let query = supabase

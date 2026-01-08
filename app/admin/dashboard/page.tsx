@@ -111,14 +111,26 @@ export default function AdminDashboard() {
   }, [dateRange])
 
   const fetchDashboardData = async () => {
+    setLoading(true)
+    setError('')
     try {
       const response = await fetch(`/api/dashboard/admin?dateRange=${dateRange}`)
       if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data')
+        console.error('Dashboard API error:', response.status)
+        setError('Failed to fetch dashboard data')
+        return
       }
+      
       const dashboardData = await response.json()
+      if (dashboardData.error) {
+        console.error('Dashboard API error:', dashboardData.error)
+        setError('Failed to fetch dashboard data')
+        return
+      }
+      
       setData(dashboardData)
     } catch (err) {
+      console.error('Dashboard fetch error:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setLoading(false)

@@ -1,11 +1,11 @@
-import { createServerClient as createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST() {
   try {
-    const supabase = createSupabaseServer()
+    const supabase = supabaseServer()
     
     // Sample rooms
     const rooms = [
