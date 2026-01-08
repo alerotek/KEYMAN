@@ -45,20 +45,7 @@ export async function GET(request: Request) {
     // Get booking statistics within date range
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select(`
-        id,
-        status,
-        created_at,
-        check_in,
-        check_out,
-        total_amount,
-        guests_count,
-        breakfast,
-        vehicle,
-        room_type_id,
-        customer_id,
-        created_by
-      `)
+      .select('*')
       .gte('created_at', startDate)
       .lte('created_at', endDate)
       .order('created_at', { ascending: false })

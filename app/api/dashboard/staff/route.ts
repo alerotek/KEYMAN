@@ -22,20 +22,7 @@ export async function GET(request: Request) {
     // Get all bookings (staff can view all bookings)
     let query = supabase
       .from('bookings')
-      .select(`
-        id,
-        status,
-        created_at,
-        check_in,
-        check_out,
-        total_amount,
-        guests_count,
-        breakfast,
-        vehicle,
-        room_type_id,
-        customer_id,
-        created_by
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     // Apply filters if provided

@@ -57,11 +57,14 @@ export default function BookPage() {
       }
       
       const data = await response.json()
-      if (data.rooms) {
+      if (data.rooms && Array.isArray(data.rooms)) {
         setRooms(data.rooms)
       } else if (data.error) {
         console.error('Rooms API error:', data.error)
         setError('Failed to load rooms')
+      } else {
+        console.warn('Unexpected API response:', data)
+        setRooms([])
       }
     } catch (err) {
       console.error('Rooms fetch error:', err)

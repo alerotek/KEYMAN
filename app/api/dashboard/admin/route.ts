@@ -33,32 +33,32 @@ export async function GET(request: Request) {
       // Bookings metrics
       supabase
         .from('bookings')
-        .select('id, status, total_amount, check_in, check_out, created_at, created_by, room_types!inner(name)')
+        .select('*')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString()),
 
       // Payments metrics
       supabase
         .from('payments')
-        .select('amount_paid, method, status, paid_at, recorded_by')
+        .select('*')
         .gte('paid_at', startDate.toISOString())
         .lte('paid_at', endDate.toISOString()),
 
       // Room metrics
       supabase
-        .from('room_inventory_summary')
+        .from('rooms')
         .select('*'),
 
       // Staff performance
       supabase
         .from('profiles')
-        .select('id, full_name, role, created_at')
+        .select('*')
         .eq('role', 'staff'),
 
       // Expenses
       supabase
         .from('expenses')
-        .select('amount, category, created_at')
+        .select('*')
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
     ])
