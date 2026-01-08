@@ -1,40 +1,48 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/secureAuth'
 import { NextResponse } from 'next/server'
 import { sendBookingConfirmationEmail } from '@/lib/email/service'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
+/* =========================
+   GET — Fetch available rooms
+========================= */
+export async function GET() {
   try {
-    const supabase = supabaseServer()
-    
-    const { data: rooms, error: roomsError } = await supabase
+    const supabase = createServerClient()
+
+    const { data: rooms, error } = await supabase
       .from('rooms')
       .select('id, room_type, base_price, breakfast_price')
       .eq('is_active', true)
       .order('room_type', { ascending: true })
 
-    if (roomsError) {
-      console.error('Rooms API error:', roomsError)
+    if (error) {
+      console.error('Rooms fetch error:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch rooms', details: roomsError.message },
+        { error: error.message },
         { status: 500 }
       )
     }
 
-    return NextResponse.json({ rooms: rooms || [] })
-  } catch (error) {
-    console.error('Rooms API error:', error)
+    return NextResponse.json({ rooms: rooms ?? [] })
+  } catch (err) {
+    console.error('Rooms API crash:', err)
     return NextResponse.json(
-      { error: 'Failed to fetch rooms' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
 
+/* =========================
+   POST — Create booking
+========================= */
 export async function POST(request: Request) {
   try {
+    const supabase = createServerClient()
     const body = await request.json()
+
     const {
       room_id,
       customer_id,
@@ -48,7 +56,7 @@ export async function POST(request: Request) {
       customer_phone
     } = body
 
-    // Validate required fields
+    /* ---------- Validation ---------- */
     if (!room_id || !check_in || !check_out || !guests_count || !customer_name || !customer_email) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -56,101 +64,103 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = supabaseServer()
-
-    // Get room details for pricing
+    /* ---------- Fetch room ---------- */
     const { data: room, error: roomError } = await supabase
       .from('rooms')
       .select('room_type, base_price, breakfast_price')
       .eq('id', room_id)
       .single()
 
-    if (roomError) {
-      console.error('Room fetch error:', roomError)
-      return NextResponse.json(
-        { error: 'Room not found', details: roomError.message },
-        { status: 404 }
-      )
-    }
-
-    if (!room) {
+    if (roomError || !room) {
       return NextResponse.json(
         { error: 'Room not found' },
         { status: 404 }
       )
     }
 
-    // Calculate nights
-    const checkInDate = new Date(check_in)
-    const checkOutDate = new Date(check_out)
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-    
+    /* ---------- Date logic ---------- */
+    const nights =
+      (new Date(check_out).getTime() - new Date(check_in).getTime()) /
+      (1000 * 60 * 60 * 24)
+
     if (nights <= 0) {
       return NextResponse.json(
-        { error: 'Check-out date must be after check-in date' },
+        { error: 'Invalid check-in / check-out dates' },
         { status: 400 }
       )
     }
 
-    // Calculate pricing
+    /* ---------- Pricing ---------- */
     let basePrice = room.base_price
     let extraGuests = 0
-    
-    if (room.room_type === 'DOUBLE') {
-      extraGuests = Math.max(guests_count - 2, 0)
-      basePrice = basePrice + (extraGuests * 500)
-    }
-    
-    const breakfastCost = breakfast ? (guests_count * room.breakfast_price * nights) : 0
-    const vehicleCost = vehicle ? 1000 : 0
-    const totalAmount = (basePrice * nights) + breakfastCost + vehicleCost
 
-    // Create customer if not exists
+    if (room.room_type === 'TWIN') {
+      extraGuests = Math.max(guests_count - 2, 0)
+      basePrice += extraGuests * 500
+    }
+
+    const breakfastCost = breakfast
+      ? guests_count * room.breakfast_price * nights
+      : 0
+
+    const vehicleCost = vehicle ? 1000 : 0
+    const totalAmount = basePrice * nights + breakfastCost + vehicleCost
+
+    /* ---------- Customer ---------- */
     let customerId = customer_id
+
     if (!customerId) {
-      // Check if customer already exists
-      const { data: existingCustomer, error: findError } = await supabase
+      const { data: existingCustomer } = await supabase
         .from('customers')
         .select('id')
         .eq('email', customer_email)
-        .single()
-
-      if (findError && findError.code !== 'PGRST116') {
-        console.error('Customer lookup error:', findError)
-        return NextResponse.json(
-          { error: 'Failed to lookup customer', details: findError.message },
-          { status: 500 }
-        )
-      }
+        .maybeSingle()
 
       if (existingCustomer) {
         customerId = existingCustomer.id
       } else {
-        // Create new customer
-        const { data: newCustomer, error: customerError } = await supabase
+        const { data: newCustomer, error } = await supabase
           .from('customers')
-          .insert([{
+          .insert({
             full_name: customer_name,
-            email: customer_email
-          }])
+            email: customer_email,
+            phone: customer_phone
+          })
           .select()
           .single()
 
-        if (customerError) {
-          console.error('Customer creation error:', customerError)
+        if (error) {
           return NextResponse.json(
-            { error: 'Failed to create customer', details: customerError.message },
+            { error: 'Failed to create customer' },
             { status: 500 }
           )
         }
+
         customerId = newCustomer.id
       }
     }
 
-    // Create booking
+    /* ---------- Conflict Check ---------- */
+    const { data: conflictingBookings } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('room_id', room_id)
+      .in('status', ['Confirmed', 'Checked-In'])
+      .or(
+        `and(check_in.lte.${check_out}, check_out.gte.${check_in})`
+      )
+
+    if (conflictingBookings && conflictingBookings.length > 0) {
+      return NextResponse.json(
+        { error: 'Room is already booked for the selected dates' },
+        { status: 409 }
+      )
+    }
+
+    /* ---------- Booking ---------- */
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .insert([{
+      .insert({
         room_id,
         customer_id: customerId,
         check_in,
@@ -162,34 +172,33 @@ export async function POST(request: Request) {
         extras_price: breakfastCost + vehicleCost,
         total_amount: totalAmount,
         status: 'Pending'
-      }])
-      .select('*')
+      })
+      .select()
       .single()
 
     if (bookingError) {
-      console.error('Booking creation error:', bookingError)
+      console.error('Booking error:', bookingError)
       return NextResponse.json(
-        { error: 'Failed to create booking', details: bookingError.message },
+        { error: bookingError.message },
         { status: 500 }
       )
     }
 
-    // Send booking confirmation email
+    /* ---------- Email ---------- */
     try {
       await sendBookingConfirmationEmail(booking)
-    } catch (emailError) {
-      console.error('Failed to send booking confirmation email:', emailError)
-      // Don't fail the booking if email fails
+    } catch (e) {
+      console.warn('Email failed (non-blocking)')
     }
 
-    return NextResponse.json({ 
-      message: 'Booking created successfully',
-      booking 
+    return NextResponse.json({
+      success: true,
+      booking
     })
-  } catch (error) {
-    console.error('Create booking error:', error)
+  } catch (err) {
+    console.error('Booking API crash:', err)
     return NextResponse.json(
-      { error: 'Failed to create booking' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
