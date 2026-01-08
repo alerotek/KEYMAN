@@ -9,14 +9,7 @@ export async function GET() {
     
     const { data: rooms, error: roomsError } = await supabase
       .from('rooms')
-      .select(`
-        id,
-        room_type,
-        max_guests,
-        base_price,
-        breakfast_price,
-        is_active
-      `)
+      .select('id, room_type, max_guests, base_price, breakfast_price, is_active')
       .eq('is_active', true)
       .order('room_type', { ascending: true })
 

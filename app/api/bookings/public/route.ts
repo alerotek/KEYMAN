@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     
     const { data: rooms, error: roomsError } = await supabase
       .from('rooms')
-      .select('*')
+      .select('id, room_type, base_price, breakfast_price')
       .eq('is_active', true)
       .order('room_type', { ascending: true })
 
@@ -163,11 +163,7 @@ export async function POST(request: Request) {
         total_amount: totalAmount,
         status: 'Pending'
       }])
-      .select(`
-        *,
-        rooms(room_type),
-        customers(full_name, email)
-      `)
+      .select('*')
       .single()
 
     if (bookingError) {
