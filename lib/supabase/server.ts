@@ -12,12 +12,7 @@ export const supabaseServer = () => {
     throw new Error('SUPABASE SERVICE ROLE KEY MISSING AT RUNTIME')
   }
 
-  return createClient(
-    supabaseUrl,
-    serviceRoleKey,
-    { auth: { persistSession: false } }
-  )
+  return createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
 }
 
-// Export alias for backward compatibility
 export { supabaseServer as createSupabaseServer }

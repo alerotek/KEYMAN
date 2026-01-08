@@ -1,95 +1,53 @@
 import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth/requireRole'
+import { requireRole } from '@/lib/auth/secureAuth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: Request) {
-  try {
-    // Verify customer role
-    const authResult = await requireRole('customer')
-    if (authResult instanceof NextResponse) {
-      return authResult
-    }
+export async function GET() {
+  const auth = await requireRole('customer')
+  if (auth instanceof NextResponse) return auth
 
-    const { user } = authResult
-    const supabase = supabaseServer()
+  const supabase = supabaseServer()
+  
+  // Fetch customer's bookings
+  const { data: bookings, error: bookingsError } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('customer_id', auth.profile.id)
+    .order('created_at', { ascending: false })
 
-    // Get customer's bookings with related data
-    const { data: bookings, error: bookingsError } = await supabase
-      .from('bookings')
-      .select(`
-        *,
-        rooms(room_type),
-        customers(full_name, email)
-      `)
-      .eq('customer_id', user.id)
-      .order('created_at', { ascending: false })
+  if (bookingsError) {
+    console.error('Customer dashboard bookings error:', bookingsError)
+    return NextResponse.json({ error: 'Failed to fetch bookings', details: bookingsError.message }, { status: 500 })
+  }
 
-    if (bookingsError) throw bookingsError
+  // Fetch customer's payments
+  const { data: payments, error: paymentsError } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('customer_id', auth.profile.id)
+    .order('paid_at', { ascending: false })
 
-    // Get payments for customer's bookings
-    const bookingIds = bookings?.map((b: any) => b.id) || []
-    let payments = []
-    
-    if (bookingIds.length > 0) {
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .in('booking_id', bookingIds)
-        .order('paid_at', { ascending: false })
+  if (paymentsError) {
+    console.error('Customer dashboard payments error:', paymentsError)
+    return NextResponse.json({ error: 'Failed to fetch payments', details: paymentsError.message }, { status: 500 })
+  }
 
-      if (!paymentsError) {
-        payments = paymentsData || []
-      }
-    }
+  // Calculate metrics
+  const totalBookings = bookings?.length || 0
+  const totalSpent = payments?.reduce((sum, payment) => sum + (payment.amount_paid || 0), 0) || 0
+  const upcomingBookings = bookings?.filter(b => b.status === 'Confirmed' && new Date(b.check_in) > new Date()).length || 0
+  const pastBookings = bookings?.filter(b => new Date(b.check_out) < new Date()).length || 0
 
-    // Calculate customer's total payments
-    const totalPayments = payments?.reduce((sum: number, payment: any) => sum + payment.amount_paid, 0) || 0
-
-    // Get booking statistics
-    const totalBookings = bookings?.length || 0
-    const pendingBookings = bookings?.filter((b: any) => b.status === 'Pending').length || 0
-    const confirmedBookings = bookings?.filter((b: any) => b.status === 'Confirmed').length || 0
-    const checkedInBookings = bookings?.filter((b: any) => b.status === 'Checked-In').length || 0
-    const checkedOutBookings = bookings?.filter((b: any) => b.status === 'Checked-Out').length || 0
-    const activeBookings = bookings?.filter((b: any) => ['Confirmed', 'Checked-In'].includes(b.status)).length || 0
-
-    // Get upcoming bookings
-    const today = new Date()
-    const upcomingBookings = bookings?.filter((booking: any) => {
-      const checkInDate = new Date(booking.check_in)
-      return checkInDate >= today && ['Confirmed', 'Pending'].includes(booking.status)
-    }) || []
-
-    // Get past bookings
-    const pastBookings = bookings?.filter((booking: any) => {
-      const checkOutDate = new Date(booking.check_out)
-      return checkOutDate < today || booking.status === 'Checked-Out'
-    }) || []
-
-    return NextResponse.json({
-      metrics: {
-        totalBookings,
-        pendingBookings,
-        confirmedBookings,
-        checkedInBookings,
-        checkedOutBookings,
-        activeBookings,
-        totalPayments,
-        upcomingBookings: upcomingBookings.length,
-        pastBookings: pastBookings.length
-      },
-      bookings: bookings || [],
-      payments: payments || [],
+  return NextResponse.json({
+    metrics: {
+      totalBookings,
+      totalSpent,
       upcomingBookings,
       pastBookings
-    })
-  } catch (error) {
-    console.error('Customer dashboard error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch customer dashboard data' },
-      { status: 500 }
-    )
-  }
+    },
+    bookings: bookings || [],
+    payments: payments || []
+  })
 }
