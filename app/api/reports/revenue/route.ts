@@ -1,8 +1,8 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const supabase = supabaseServer()
+  const supabase = createSupabaseServer()
 
   const { data } = await supabase
     .from('bookings')

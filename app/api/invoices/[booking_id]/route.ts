@@ -1,4 +1,4 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import jsPDF from 'jspdf'
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: { booking_id: string } }
 ) {
   try {
-    const supabase = supabaseServer()
+    const supabase = createSupabaseServer()
     const bookingId = params.booking_id
 
     // Get booking with all related data

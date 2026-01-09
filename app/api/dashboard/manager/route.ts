@@ -1,14 +1,15 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth/secureAuth'
+import { requireRole } from '@/lib/auth/requireRole'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    await requireRole(request, ['MANAGER'])
+    const auth = await requireRole('manager')
+    if (auth instanceof Response) return auth
     
-    const supabase = supabaseServer()
+    const supabase = createSupabaseServer()
     
     const { data: rooms, error: roomsError } = await supabase
       .from('rooms')

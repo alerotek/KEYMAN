@@ -1,14 +1,15 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth/secureAuth'
+import { requireRole } from '@/lib/auth/requireRole'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
-    await requireRole(req, ['ADMIN', 'MANAGER'])
+    const auth = await requireRole('manager')
+    if (auth instanceof Response) return auth
     
-    const supabase = supabaseServer()
+    const supabase = createSupabaseServer()
     const body = await req.json()
 
     const { 
@@ -87,8 +88,10 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const user = await requireRole(req, ['ADMIN', 'MANAGER', 'STAFF'])
-    const supabase = supabaseServer()
+    const auth = await requireRole('staff')
+    if (auth instanceof Response) return auth
+    
+    const supabase = createSupabaseServer()
     const { searchParams } = new URL(req.url)
     
     const status = searchParams.get('status')
@@ -130,12 +133,12 @@ export async function GET(req: Request) {
     const { data: userProfile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', auth.user.id)
       .single()
 
     if (userProfile?.role === 'STAFF') {
       // Staff can only see their own tasks
-      query = query.eq('assigned_to', user.id)
+      query = query.eq('assigned_to', auth.user.id)
     }
     // Admins and Managers can see all tasks (no additional filter needed)
 

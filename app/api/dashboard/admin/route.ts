@@ -1,8 +1,8 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const supabase = supabaseServer()
+  const supabase = createSupabaseServer()
 
   const [rooms, bookings, revenue] = await Promise.all([
     supabase.from('rooms').select('id', { count: 'exact' }),

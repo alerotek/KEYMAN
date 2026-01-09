@@ -1,14 +1,15 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth/secureAuth'
+import { requireRole } from '@/lib/auth/requireRole'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
-    await requireRole(req, ['ADMIN', 'MANAGER'])
+    const auth = await requireRole('manager')
+    if (auth instanceof Response) return auth
     
-    const supabase = supabaseServer()
+    const supabase = createSupabaseServer()
     const body = await req.json()
 
     const { booking_id, amount, payment_method, transaction_id } = body

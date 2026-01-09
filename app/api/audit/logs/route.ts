@@ -1,13 +1,15 @@
-import { supabaseServer } from '@/lib/supabase/server'
+import { createSupabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/auth/secureAuth'
+import { requireRole } from '@/lib/auth/requireRole'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: Request) {
   try {
-    await requireRole(req, ['ADMIN'])
-    const supabase = supabaseServer()
+    const auth = await requireRole('admin')
+    if (auth instanceof Response) return auth
+    
+    const supabase = createSupabaseServer()
     const { searchParams } = new URL(req.url)
     
     const entity_type = searchParams.get('entity_type')
@@ -56,8 +58,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    await requireRole(req, ['ADMIN', 'MANAGER'])
-    const supabase = supabaseServer()
+    const auth = await requireRole('manager')
+    if (auth instanceof Response) return auth
+    
+    const supabase = createSupabaseServer()
     const body = await req.json()
 
     const { 
