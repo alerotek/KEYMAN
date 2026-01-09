@@ -2,7 +2,7 @@
 // Tracks API response times, bundle sizes, and slow queries
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 
 interface PerformanceMetric {
   route: string
@@ -39,12 +39,12 @@ class PerformanceTracker {
     }
 
     // Log to database asynchronously (non-blocking)
-    this.logToDatabase(metric).catch(console.error)
+    recordPerformanceMetric(metric).catch(console.error)
   }
 
   private async logSlowRequest(metric: PerformanceMetric): Promise<void> {
     try {
-      const supabase = createSupabaseServer()
+      const supabase = supabaseServer()
       await supabase
         .from('performance_metrics')
         .insert([{
@@ -65,7 +65,7 @@ class PerformanceTracker {
     if (Math.random() > 0.1) return
 
     try {
-      const supabase = createSupabaseServer()
+      const supabase = supabaseServer()
       await supabase.rpc('log_api_performance', {
         p_route: metric.route,
         p_method: metric.method,

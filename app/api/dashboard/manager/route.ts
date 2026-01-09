@@ -4,29 +4,34 @@ import { requireRole } from '@/lib/auth/secureAuth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  t    awaitrequireRole(rust NR)
-    constsupabase= supabaseServe()
+export async function GET(request: Request) {
+  try {
+    await requireRole(request, ['MANAGER'])
     
-    cnst { data: roms, error: msError } = await supabase
-    .fm('roms')
-    .select('*')
-      .e('i_at', e)
+    const supabase = supabaseServer()
+    
+    const { data: rooms, error: roomsError } = await supabase
+      .from('rooms')
+      .select('*')
+      .eq('is_active', true)
 
-    if(roomsError)troroomsError
+    if (roomsError) throw roomsError
 
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('*')
-   .order('created_at',{ascending:false})
+      .order('created_at', { ascending: false })
 
-    if (bookingsError) hro bookingsError
-    return NextResponse.json({     oos: roms  
-      oons: oois  
-    )
-   cah err: ) {
+    if (bookingsError) throw bookingsError
+
+    return NextResponse.json({
+      rooms: rooms || [],
+      bookings: bookings || []
+    })
+  } catch (err: any) {
     return NextResponse.json(
-      error: err.message }, status err.messge === 'nathoied' ? 1 : err.msag  oridden  0 : 00 }
+      { error: err.message },
+      { status: err.message === 'Unauthorized' ? 401 : err.message === 'Forbidden' ? 403 : 500 }
     )
   }
-
+}

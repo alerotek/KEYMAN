@@ -1,4 +1,4 @@
-import { createSupabaseServer } from '@/lib/supabase/server'
+import { supabaseServer } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 // Role hierarchy for production-grade RBAC
@@ -13,8 +13,8 @@ export const ROLE_HIERARCHY = {
 // Valid roles for validation
 export const VALID_ROLES = ['guest', 'customer', 'staff', 'manager', 'admin']
 
-export async function requireRole(requiredRole: string) {
-  const supabase = createSupabaseServer()
+export async function getSecureSession(request: Request, requiredRole: string) {
+  const supabase = supabaseServer()
   
   // Validate required role
   if (!VALID_ROLES.includes(requiredRole)) {
@@ -69,7 +69,7 @@ export async function requireRole(requiredRole: string) {
 }
 
 export async function requireMinimumRole(minimumRole: string) {
-  const supabase = createSupabaseServer()
+  const supabase = supabaseServer()
   
   // Validate minimum role
   if (!VALID_ROLES.includes(minimumRole)) {

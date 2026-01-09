@@ -1,7 +1,7 @@
-import { createSupabaseServer } from './supabase/server'
+import { supabaseServer } from './supabase/server'
 
 export async function getUser() {
-  const supabase = createSupabaseServer()
+  const supabase = supabaseServer()
   try {
     const { data: { user } } = await supabase.auth.getUser()
     return user
@@ -12,7 +12,7 @@ export async function getUser() {
 }
 
 export async function getUserRole(userId: string) {
-  const supabase = createSupabaseServer()
+  const supabase = supabaseServer()
   try {
     const { data, error } = await supabase
       .from('profiles')
