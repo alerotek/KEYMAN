@@ -5,29 +5,20 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    console.log('Fetching rooms...')
     const supabase = supabaseServer()
-    
-    const { data: rooms, error: roomsError } = await supabase
+
+    const { data, error } = await supabase
       .from('rooms')
-      .select('*')
+      .select('id, room_number, room_type, base_price, breakfast_price')
       .eq('is_active', true)
-      .order('room_type', { ascending: true })
+      .order('room_number')
 
-    if (roomsError) {
-      console.error('Rooms API error:', roomsError)
-      return NextResponse.json(
-        { error: 'Failed to fetch rooms', details: roomsError.message },
-        { status: 500 }
-      )
-    }
+    if (error) throw error
 
-    console.log('Rooms fetched successfully:', rooms?.length || 0)
-    return NextResponse.json({ rooms: rooms || [] })
-  } catch (error) {
-    console.error('Rooms API error:', error)
+    return NextResponse.json({ rooms: data })
+  } catch (err: any) {
     return NextResponse.json(
-      { error: 'Failed to fetch rooms' },
+      { error: err.message },
       { status: 500 }
     )
   }

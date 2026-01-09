@@ -6,10 +6,9 @@ export async function GET() {
 
   const { data } = await supabase
     .from('bookings')
-    .select('room_id')
+    .select('total_amount')
     .eq('status', 'Confirmed')
 
-  return NextResponse.json({
-    occupiedRooms: new Set(data?.map(b => b.room_id)).size
-  })
+  const total = data?.reduce((s, r) => s + r.total_amount, 0) || 0
+  return NextResponse.json({ revenue: total })
 }
